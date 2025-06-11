@@ -1,0 +1,26 @@
+{
+  "name": "pretty-good-state",
+  "version": "1.0.0",
+  "module": "dist/index.js",
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "bun run build"
+  },
+  "devDependencies": {
+    "@happy-dom/global-registrator": "^17.1.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@types/bun": "latest",
+    "@types/react": "^19.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0 <20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "valtio": "^2.0.0"
+  }
+}

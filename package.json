@@ -1,0 +1,6 @@
+{
+  "workspaces": [
+    "pretty-good-state",
+    "example"
+  ]
+}
