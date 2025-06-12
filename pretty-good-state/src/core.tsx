@@ -88,9 +88,10 @@ export function useProvidedState<T extends object>(
   stateFactory: StateFactory<T>
 ): State<T> {
   const store = useContext(StoreContext);
-  const state = store.states.get(stateFactory);
+  let state = store.states.get(stateFactory);
   if (!state) {
-    throw new Error(`Can't call useProvidedState() without a Provider`);
+    state = stateFactory();
+    store.states.set(stateFactory, state);
   }
   return useSnapshot(state);
 }
