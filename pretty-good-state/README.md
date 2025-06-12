@@ -92,3 +92,29 @@ function Counter() {
   );
 }
 ```
+
+### Setting State
+
+The `set` method allows you to update the state simply by mutating the state
+object. We use [valtio](https://github.com/pmndrs/valtio) under the hood to
+track mutations and re-render the components that depend on those exact changes.
+
+```tsx
+function Counter() {
+  const counter = useLocalState(CounterState);
+
+  useEffect(() => {
+    counter.set((state) => {
+      state.count++;
+    });
+  }, []);
+}
+```
+
+You can also use an initial state modifier to set the initial state:
+
+```tsx
+const counter = useLocalState(CounterState, (state) => {
+  state.count = 10;
+});
+```
