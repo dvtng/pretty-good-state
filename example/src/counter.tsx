@@ -11,10 +11,13 @@ export function CounterView({ initialCount }: { initialCount?: number }) {
     }
   });
   return (
-    <div className="flex items-center gap-2">
-      <button onClick={() => counter.set((state) => state.count--)}>-</button>
-      <div>{counter.count}</div>
-      <button onClick={() => counter.set((state) => state.count++)}>+</button>
+    <div>
+      <div className="text-base">Counter</div>
+      <div className="flex items-center gap-2">
+        <button onClick={() => counter.set((state) => state.count--)}>-</button>
+        <div>{counter.count}</div>
+        <button onClick={() => counter.set((state) => state.count++)}>+</button>
+      </div>
     </div>
   );
 }

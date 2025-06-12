@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useRef } from "react";
 import { proxy, useSnapshot } from "valtio";
 import { deepClone } from "valtio/utils";
 
@@ -15,6 +15,7 @@ export type StateFactory<T extends object> = (
 type StateWithInternal<T extends object> = State<T> & {
   _internal: {
     factory: StateFactory<T>;
+    getProxy: () => State<T>;
   };
 };
 
@@ -30,6 +31,9 @@ export function state<T extends object>(initialValue: T): StateFactory<T> {
       },
       _internal: {
         factory,
+        getProxy() {
+          return state;
+        },
       },
     });
 
@@ -41,9 +45,16 @@ export function useLocalState<T extends object>(
   stateFactory: StateFactory<T>,
   setInitialValue?: StateSetter<T>
 ) {
-  const [state] = useState(() => stateFactory(setInitialValue));
+  const state = useRef<State<T> | null>(null);
 
-  return useSnapshot(state);
+  if (
+    state.current === null ||
+    (state.current as StateWithInternal<T>)._internal.factory !== stateFactory
+  ) {
+    state.current = stateFactory(setInitialValue);
+  }
+
+  return useSnapshot(state.current);
 }
 
 type Store = {
@@ -61,10 +72,11 @@ export function Provider<T extends object>({
 }) {
   // Merge store with parent store
   const parentStore = useContext(StoreContext);
+  const internal = (state as StateWithInternal<T>)._internal;
   const newStore = {
     states: new Map([
       ...parentStore.states,
-      [(state as StateWithInternal<T>)._internal.factory, state],
+      [internal.factory, internal.getProxy()],
     ]),
   };
   return (
@@ -76,5 +88,9 @@ export function useProvidedState<T extends object>(
   stateFactory: StateFactory<T>
 ): State<T> {
   const store = useContext(StoreContext);
-  return store.states.get(stateFactory) ?? stateFactory();
+  const state = store.states.get(stateFactory);
+  if (!state) {
+    throw new Error(`Can't call useProvidedState() without a Provider`);
+  }
+  return useSnapshot(state);
 }

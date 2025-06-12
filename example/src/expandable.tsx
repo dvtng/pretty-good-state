@@ -12,12 +12,15 @@ const ExpandableState = state({
 export function Expandable({ content }: { content: string }) {
   const state = useLocalState(ExpandableState);
   return (
-    <Provider state={state}>
-      <div className="flex gap-2 items-start">
-        <ExpandableContent content={content} />
-        <ExpandButton />
-      </div>
-    </Provider>
+    <div>
+      <Provider state={state}>
+        <div className="text-base">Expandable</div>
+        <div className="flex gap-2 items-start">
+          <ExpandableContent content={content} />
+          <ExpandButton />
+        </div>
+      </Provider>
+    </div>
   );
 }
 
