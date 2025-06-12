@@ -1,5 +1,5 @@
 import { createContext, useContext, useRef } from "react";
-import { proxy, useSnapshot } from "valtio";
+import { proxy, ref, useSnapshot } from "valtio";
 import { deepClone } from "valtio/utils";
 
 export type State<T extends object> = T & {
@@ -29,12 +29,20 @@ export function state<T extends object>(initialValue: T): StateFactory<T> {
       set: (fn: StateSetter<T>) => {
         fn(state);
       },
-      _internal: {
+      _internal: ref({
         factory,
         getProxy() {
           return state;
         },
-      },
+      }),
+    });
+
+    // Bind functions to the state object
+    Object.getOwnPropertyNames(state).forEach((_key) => {
+      const key = _key as keyof T;
+      if (typeof state[key] === "function") {
+        state[key] = state[key].bind(state);
+      }
     });
 
     return state;

@@ -2,6 +2,13 @@ import { state, useLocalState } from "pretty-good-state";
 
 export const Counter = state({
   count: 0,
+  increment() {
+    this.count++;
+  },
+  decrement() {
+    if (this.count === 0) return;
+    this.count--;
+  },
 });
 
 export function CounterView({ initialCount }: { initialCount?: number }) {
@@ -14,9 +21,9 @@ export function CounterView({ initialCount }: { initialCount?: number }) {
     <div>
       <div className="text-base">Counter</div>
       <div className="flex items-center gap-2">
-        <button onClick={() => counter.set((state) => state.count--)}>-</button>
+        <button onClick={counter.decrement}>-</button>
         <div>{counter.count}</div>
-        <button onClick={() => counter.set((state) => state.count++)}>+</button>
+        <button onClick={counter.increment}>+</button>
       </div>
     </div>
   );

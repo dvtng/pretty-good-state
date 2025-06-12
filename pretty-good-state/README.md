@@ -22,6 +22,20 @@ const CounterState = state({
 });
 ```
 
+You can also define methods on the state that directly mutate it:
+
+```tsx
+const CounterState = state({
+  count: 0,
+  increment() {
+    this.count++;
+  },
+});
+```
+
+We use [valtio](https://github.com/pmndrs/valtio) under the hood to
+track mutations and re-render the components that depend on those exact changes.
+
 ### Local State
 
 Use `useLocalState()` to initialize component-local state:
@@ -35,15 +49,7 @@ function Counter() {
   return (
     <div>
       <p>Count: {counter.count}</p>
-      <button
-        onClick={() =>
-          counter.set((state) => {
-            state.count++;
-          })
-        }
-      >
-        Increment
-      </button>
+      <button onClick={counter.increment}>Increment</button>
     </div>
   );
 }
@@ -95,23 +101,19 @@ function Counter() {
 
 ### Setting State
 
-The `set` method allows you to update the state simply by mutating the state
-object. We use [valtio](https://github.com/pmndrs/valtio) under the hood to
-track mutations and re-render the components that depend on those exact changes.
+In addition to the methods you define on the state, you can also use the `set`
+method to update your state arbitrarily:
 
 ```tsx
-function Counter() {
-  const counter = useLocalState(CounterState);
+const counter = useLocalState(CounterState);
 
-  useEffect(() => {
-    counter.set((state) => {
-      state.count++;
-    });
-  }, []);
-}
+// In an event handler, for example
+counter.set((state) => {
+  state.count = 0;
+});
 ```
 
-You can also use an initial state modifier to set the initial state:
+Setting the initial state works similarly:
 
 ```tsx
 const counter = useLocalState(CounterState, (state) => {

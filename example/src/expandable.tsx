@@ -7,6 +7,9 @@ import {
 
 const ExpandableState = state({
   isExpanded: false,
+  toggle() {
+    this.isExpanded = !this.isExpanded;
+  },
 });
 
 export function Expandable({ content }: { content: string }) {
@@ -27,13 +30,7 @@ export function Expandable({ content }: { content: string }) {
 function ExpandButton() {
   const state = useProvidedState(ExpandableState);
   return (
-    <button
-      onClick={() =>
-        state.set((state) => {
-          state.isExpanded = !state.isExpanded;
-        })
-      }
-    >
+    <button onClick={() => state.toggle()}>
       {state.isExpanded ? "-" : "+"}
     </button>
   );
