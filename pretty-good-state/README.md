@@ -94,6 +94,9 @@ function Counter() {
 }
 ```
 
+You can also call `useProvidedState()` without a Provider, in which case it will
+use a shared global state.
+
 ### Setting State
 
 In addition to the methods you define on the state, you can also use the `set`
@@ -114,4 +117,15 @@ Setting the initial state works similarly:
 const counter = useLocalState(CounterState, (state) => {
   state.count = 10;
 });
+```
+
+### Accessing global state outside of a component
+
+The `globalStore` object lets you access global state outside of a component:
+
+```tsx
+import { globalStore } from "pretty-good-state";
+
+const counter = globalStore.getState(CounterState);
+counter.increment();
 ```

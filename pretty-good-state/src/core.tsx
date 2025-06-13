@@ -65,11 +65,30 @@ export function useLocalState<T extends object>(
   return useSnapshot(state.current);
 }
 
-type Store = {
-  states: Map<StateFactory<any>, State<any>>;
-};
+export class Store {
+  private states: Map<StateFactory<any>, State<any>> = new Map();
 
-const StoreContext = createContext<Store>({ states: new Map() });
+  constructor(private parent?: Store) {}
+
+  setState<T extends object>(state: State<T>): void {
+    const internal = (state as StateWithInternal<T>)._internal;
+    this.states.set(internal.factory, internal.getProxy());
+  }
+
+  getState<T extends object>(stateFactory: StateFactory<T>): State<T> {
+    let state =
+      this.states.get(stateFactory) ?? this.parent?.getState(stateFactory);
+    if (!state) {
+      state = stateFactory();
+      this.setState(state);
+    }
+    return state;
+  }
+}
+
+export const globalStore = new Store();
+
+const StoreContext = createContext<Store>(globalStore);
 
 export function Provider<T extends object>({
   state,
@@ -78,17 +97,17 @@ export function Provider<T extends object>({
   state: State<T>;
   children?: React.ReactNode;
 }) {
-  // Merge store with parent store
   const parentStore = useContext(StoreContext);
-  const internal = (state as StateWithInternal<T>)._internal;
-  const newStore = {
-    states: new Map([
-      ...parentStore.states,
-      [internal.factory, internal.getProxy()],
-    ]),
-  };
+  const storeRef = useRef<Store | null>(null);
+  if (storeRef.current === null) {
+    storeRef.current = new Store(parentStore);
+  }
+  storeRef.current.setState(state);
+
   return (
-    <StoreContext.Provider value={newStore}>{children}</StoreContext.Provider>
+    <StoreContext.Provider value={storeRef.current}>
+      {children}
+    </StoreContext.Provider>
   );
 }
 
@@ -96,10 +115,6 @@ export function useProvidedState<T extends object>(
   stateFactory: StateFactory<T>
 ): State<T> {
   const store = useContext(StoreContext);
-  let state = store.states.get(stateFactory);
-  if (!state) {
-    state = stateFactory();
-    store.states.set(stateFactory, state);
-  }
-  return useSnapshot(state);
+  const state = store.getState(stateFactory);
+  return useSnapshot(state) as State<T>;
 }
