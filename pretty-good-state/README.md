@@ -65,6 +65,9 @@ import { Provider, useProvidedState } from "pretty-good-state";
 
 const CounterState = state({
   count: 0,
+  increment() {
+    this.count++;
+  },
 });
 
 function Page() {
@@ -85,15 +88,7 @@ function Counter() {
   return (
     <div>
       <p>Count: {counter.count}</p>
-      <button
-        onClick={() =>
-          counter.set((state) => {
-            state.count++;
-          })
-        }
-      >
-        Increment
-      </button>
+      <button onClick={counter.increment}>Increment</button>
     </div>
   );
 }
