@@ -20,9 +20,20 @@ export type StateSetter<T extends object> = (state: T) => void;
 
 export function defineState<T extends object>(
   initialValue: T
+): StateConstructor<T>;
+
+export function defineState<T extends object>(
+  initialValue: () => T
+): StateConstructor<T>;
+
+export function defineState<T extends object>(
+  initialValue: T | (() => T)
 ): StateConstructor<T> {
   return function constructor(setInitialValue?: StateSetter<T>) {
-    const clonedInitialValue = deepClone(initialValue);
+    const clonedInitialValue =
+      typeof initialValue === "function"
+        ? initialValue()
+        : deepClone(initialValue);
 
     setInitialValue?.(clonedInitialValue);
 
@@ -115,8 +126,8 @@ export function Provider<T extends object>({
 
 export function useProvidedState<T extends object>(
   constructor: StateConstructor<T>
-): State<T> {
+) {
   const store = useContext(StoreContext);
   const state = store.getState(constructor);
-  return useSnapshot(state) as State<T>;
+  return useSnapshot(state);
 }
