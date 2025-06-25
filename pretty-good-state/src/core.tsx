@@ -1,45 +1,46 @@
 import { createContext, useContext, useRef } from "react";
-import { proxy, ref, useSnapshot } from "valtio";
+import { proxy, useSnapshot } from "valtio";
 import { deepClone } from "valtio/utils";
 
-export type State<T extends object> = T & {
-  readonly set: (fn: StateSetter<T>) => void;
+export type State<T extends object> = T &
+  StateIdentity<T> & {
+    readonly set: (fn: StateSetter<T>) => void;
+  };
+
+export type StateIdentity<T extends object> = {
+  readonly get: () => State<T>;
+  readonly constructor: StateConstructor<T>;
 };
 
-export type StateSetter<T extends object> = (state: T) => void;
-
-export type StateFactory<T extends object> = (
+export type StateConstructor<T extends object> = (
   setInitialValue?: StateSetter<T>
 ) => State<T>;
 
-type StateWithInternal<T extends object> = State<T> & {
-  _internal: {
-    factory: StateFactory<T>;
-    getProxy: () => State<T>;
-  };
-};
+export type StateSetter<T extends object> = (state: T) => void;
 
-export function state<T extends object>(initialValue: T): StateFactory<T> {
-  return function factory(setInitialValue) {
+export function defineState<T extends object>(
+  initialValue: T
+): StateConstructor<T> {
+  return function constructor(setInitialValue?: StateSetter<T>) {
     const clonedInitialValue = deepClone(initialValue);
+
     setInitialValue?.(clonedInitialValue);
 
-    const state = proxy({
+    const state: State<T> = proxy({
       ...clonedInitialValue,
-      set: (fn: StateSetter<T>) => {
+      set: (fn) => {
         fn(state);
       },
-      _internal: ref({
-        factory,
-        getProxy() {
-          return state;
-        },
-      }),
+      get: () => state,
+      constructor,
     });
 
     // Bind functions to the state object
     Object.getOwnPropertyNames(state).forEach((_key) => {
       const key = _key as keyof T;
+      if (key === "set" || key === "get" || key === "constructor") {
+        return;
+      }
       if (typeof state[key] === "function") {
         state[key] = state[key].bind(state);
       }
@@ -49,37 +50,38 @@ export function state<T extends object>(initialValue: T): StateFactory<T> {
   };
 }
 
+/**
+ * @deprecated Use `defineState` instead.
+ */
+export const state = defineState;
+
 export function useLocalState<T extends object>(
-  stateFactory: StateFactory<T>,
+  constructor: StateConstructor<T>,
   setInitialValue?: StateSetter<T>
 ) {
   const state = useRef<State<T> | null>(null);
 
-  if (
-    state.current === null ||
-    (state.current as StateWithInternal<T>)._internal.factory !== stateFactory
-  ) {
-    state.current = stateFactory(setInitialValue);
+  if (state.current === null || state.current?.constructor !== constructor) {
+    state.current = constructor(setInitialValue);
   }
 
   return useSnapshot(state.current);
 }
 
 export class Store {
-  private states: Map<StateFactory<any>, State<any>> = new Map();
+  private states: Map<StateConstructor<any>, State<any>> = new Map();
 
   constructor(private parent?: Store) {}
 
-  setState<T extends object>(state: State<T>): void {
-    const internal = (state as StateWithInternal<T>)._internal;
-    this.states.set(internal.factory, internal.getProxy());
+  setState<T extends object>(state: StateIdentity<T>): void {
+    this.states.set(state.constructor, state.get());
   }
 
-  getState<T extends object>(stateFactory: StateFactory<T>): State<T> {
+  getState<T extends object>(constructor: StateConstructor<T>): State<T> {
     let state =
-      this.states.get(stateFactory) ?? this.parent?.getState(stateFactory);
+      this.states.get(constructor) ?? this.parent?.getState(constructor);
     if (!state) {
-      state = stateFactory();
+      state = constructor();
       this.setState(state);
     }
     return state;
@@ -94,7 +96,7 @@ export function Provider<T extends object>({
   state,
   children,
 }: {
-  state: State<T>;
+  state: StateIdentity<T>;
   children?: React.ReactNode;
 }) {
   const parentStore = useContext(StoreContext);
@@ -112,9 +114,9 @@ export function Provider<T extends object>({
 }
 
 export function useProvidedState<T extends object>(
-  stateFactory: StateFactory<T>
+  constructor: StateConstructor<T>
 ): State<T> {
   const store = useContext(StoreContext);
-  const state = store.getState(stateFactory);
+  const state = store.getState(constructor);
   return useSnapshot(state) as State<T>;
 }

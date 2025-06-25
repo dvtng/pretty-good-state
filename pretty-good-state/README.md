@@ -12,12 +12,12 @@ npm install pretty-good-state
 
 ### Creating State
 
-Use the `state()` function to create reusable state:
+Use the `defineState()` function to create reusable state:
 
 ```tsx
-import { state } from "pretty-good-state";
+import { defineState } from "pretty-good-state";
 
-const CounterState = state({
+const CounterState = defineState({
   count: 0,
 });
 ```
@@ -25,7 +25,7 @@ const CounterState = state({
 You can also define methods on the state that directly mutate it:
 
 ```tsx
-const CounterState = state({
+const CounterState = defineState({
   count: 0,
   increment() {
     this.count++;
@@ -61,9 +61,9 @@ Use `Provider` and `useProvidedState()` to share state for a portion
 of your React tree:
 
 ```tsx
-import { Provider, useProvidedState } from "pretty-good-state";
+import { defineState, Provider, useProvidedState } from "pretty-good-state";
 
-const CounterState = state({
+const CounterState = defineState({
   count: 0,
   increment() {
     this.count++;

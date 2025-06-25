@@ -1,6 +1,6 @@
-import { state, useLocalState } from "pretty-good-state";
+import { defineState, useLocalState } from "pretty-good-state";
 
-export const Counter = state({
+export const Counter = defineState({
   count: 0,
   increment() {
     this.count++;

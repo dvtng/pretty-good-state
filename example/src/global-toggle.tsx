@@ -1,6 +1,6 @@
-import { state, useProvidedState } from "pretty-good-state";
+import { defineState, useProvidedState } from "pretty-good-state";
 
-const ToggleState = state({
+const ToggleState = defineState({
   isOn: true,
   toggle() {
     this.isOn = !this.isOn;

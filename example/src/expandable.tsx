@@ -1,11 +1,11 @@
 import {
+  defineState,
   Provider,
-  state,
   useLocalState,
   useProvidedState,
 } from "pretty-good-state";
 
-const ExpandableState = state({
+const ExpandableState = defineState({
   isExpanded: false,
   toggle() {
     this.isExpanded = !this.isExpanded;
