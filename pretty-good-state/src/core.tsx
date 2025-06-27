@@ -2,34 +2,34 @@ import { createContext, useContext, useRef } from "react";
 import { proxy, useSnapshot } from "valtio";
 import { deepClone } from "valtio/utils";
 
-export type State<T extends object> = T &
-  StateIdentity<T> & {
-    readonly set: (fn: StateSetter<T>) => void;
-  };
+export type State<T extends object> = T & StateX<T>;
 
-export type StateIdentity<T extends object> = {
+export type StateX<T extends object> = {
+  readonly set: (fn: StateSetter<T>) => void;
   readonly get: () => State<T>;
   readonly constructor: StateConstructor<T>;
 };
 
-export type StateConstructor<T extends object> = (
+export type StateConstructor<T extends object> = ((
   setInitialValue?: StateSetter<T>
-) => State<T>;
+) => State<T>) & {
+  readonly Type: State<T>;
+};
 
 export type StateSetter<T extends object> = (state: T) => void;
-
-export function defineState<T extends object>(
-  initialValue: T
-): StateConstructor<T>;
 
 export function defineState<T extends object>(
   initialValue: () => T
 ): StateConstructor<T>;
 
 export function defineState<T extends object>(
+  initialValue: T
+): StateConstructor<T>;
+
+export function defineState<T extends object>(
   initialValue: T | (() => T)
 ): StateConstructor<T> {
-  return function constructor(setInitialValue?: StateSetter<T>) {
+  const constructor = function (setInitialValue?: StateSetter<T>) {
     const clonedInitialValue =
       typeof initialValue === "function"
         ? initialValue()
@@ -58,7 +58,9 @@ export function defineState<T extends object>(
     });
 
     return state;
-  };
+  } as StateConstructor<T>;
+
+  return constructor;
 }
 
 /**
@@ -84,7 +86,7 @@ export class Store {
 
   constructor(private parent?: Store) {}
 
-  setState<T extends object>(state: StateIdentity<T>): void {
+  setState<T extends object>(state: StateX<T>): void {
     this.states.set(state.constructor, state.get());
   }
 
@@ -107,7 +109,7 @@ export function Provider<T extends object>({
   state,
   children,
 }: {
-  state: StateIdentity<T>;
+  state: StateX<T>;
   children?: React.ReactNode;
 }) {
   const parentStore = useContext(StoreContext);

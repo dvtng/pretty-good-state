@@ -8,7 +8,7 @@ import {
 import { ReactNode, useEffect } from "react";
 import { twMerge } from "tailwind-merge";
 
-export const ScrollState = defineState({
+export const ScrollState = defineState(() => ({
   top: 0,
   left: 0,
   width: 0,
@@ -17,7 +17,7 @@ export const ScrollState = defineState({
   scrollTo(scrollTopOptions: ScrollToOptions) {
     this.el?.scrollTo(scrollTopOptions);
   },
-});
+}));
 
 export function ScrollView({
   children,
