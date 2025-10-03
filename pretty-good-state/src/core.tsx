@@ -8,6 +8,7 @@ export type StateSnapshot<T extends object> = Snapshot<T> & StateX<T>;
 
 export type StateX<T extends object> = {
   readonly $: T;
+  readonly set: (fn: StateSetter<T>) => void;
   readonly constructor: StateConstructor<T>;
 };
 
@@ -43,13 +44,16 @@ export function defineState<T extends object>(
       get $() {
         return ref(state);
       },
+      set: (fn) => {
+        fn(state);
+      },
       constructor,
     });
 
     // Bind functions to the state object
     Object.getOwnPropertyNames(state).forEach((_key) => {
       const key = _key as keyof T;
-      if (key === "$" || key === "constructor") {
+      if (key === "$" || key === "set" || key === "constructor") {
         return;
       }
       if (typeof state[key] === "function") {

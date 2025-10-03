@@ -131,6 +131,19 @@ function handleIncrement() {
 }
 ```
 
+Alternatively, you can use the `set` method to distinguish mutations from state
+access:
+
+```tsx
+const counter = useLocalState(CounterState);
+
+function handleIncrement() {
+  counter.set((state) => {
+    state.count++;
+  });
+}
+```
+
 ### Accessing global state outside of a component
 
 The `globalStore` object lets you access global state outside of a component:
