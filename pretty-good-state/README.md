@@ -55,6 +55,14 @@ function Counter() {
 }
 ```
 
+You can also configure the initial state:
+
+```tsx
+const counter = useLocalState(CounterState, (state) => {
+  state.count = 10;
+});
+```
+
 ### Shared State
 
 Use `Provider` and `useProvidedState()` to share state for a portion
@@ -97,26 +105,30 @@ function Counter() {
 You can also call `useProvidedState()` without a Provider, in which case it will
 use a shared global state.
 
-### Setting State
+### Accessing and Mutating the "Live" State
 
-In addition to the methods you define on the state, you can also use the `set`
-method to update your state arbitrarily:
+When calling `useLocalState()` or `useProvidedState()`, the returned object
+is a read-only snapshot of the state. This is essential for tracking which
+properties are used in rendering the component. However, you can also access the
+"live", mutable state directly using the `$` property.
 
 ```tsx
 const counter = useLocalState(CounterState);
 
-// In an event handler, for example
-counter.set((state) => {
-  state.count = 0;
-});
+function handleReset() {
+  counter.$.count = 0;
+}
 ```
 
-Setting the initial state works similarly:
+This can also be useful when you read the updated state after a mutation:
 
 ```tsx
-const counter = useLocalState(CounterState, (state) => {
-  state.count = 10;
-});
+const counter = useLocalState(CounterState);
+
+function handleIncrement() {
+  counter.increment();
+  console.log(counter.$.count);
+}
 ```
 
 ### Accessing global state outside of a component

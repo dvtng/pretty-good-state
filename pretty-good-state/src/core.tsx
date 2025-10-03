@@ -1,12 +1,13 @@
 import { createContext, useContext, useRef } from "react";
-import { proxy, useSnapshot } from "valtio";
+import { proxy, ref, useSnapshot, type Snapshot } from "valtio";
 import { deepClone } from "valtio/utils";
 
 export type State<T extends object> = T & StateX<T>;
 
+export type StateSnapshot<T extends object> = Snapshot<T> & StateX<T>;
+
 export type StateX<T extends object> = {
-  readonly set: (fn: StateSetter<T>) => void;
-  readonly get: () => State<T>;
+  readonly $: T;
   readonly constructor: StateConstructor<T>;
 };
 
@@ -39,17 +40,16 @@ export function defineState<T extends object>(
 
     const state: State<T> = proxy({
       ...clonedInitialValue,
-      set: (fn) => {
-        fn(state);
+      get $() {
+        return ref(state);
       },
-      get: () => state,
       constructor,
     });
 
     // Bind functions to the state object
     Object.getOwnPropertyNames(state).forEach((_key) => {
       const key = _key as keyof T;
-      if (key === "set" || key === "get" || key === "constructor") {
+      if (key === "$" || key === "constructor") {
         return;
       }
       if (typeof state[key] === "function") {
@@ -78,7 +78,7 @@ export function useLocalState<T extends object>(
     state.current = constructor(setInitialValue);
   }
 
-  return useSnapshot(state.current);
+  return useSnapshot(state.current) as StateSnapshot<T>;
 }
 
 export class Store {
@@ -87,7 +87,7 @@ export class Store {
   constructor(private parent?: Store) {}
 
   setState<T extends object>(state: StateX<T>): void {
-    this.states.set(state.constructor, state.get());
+    this.states.set(state.constructor, state.$);
   }
 
   getState<T extends object>(constructor: StateConstructor<T>): State<T> {
@@ -131,5 +131,5 @@ export function useProvidedState<T extends object>(
 ) {
   const store = useContext(StoreContext);
   const state = store.getState(constructor);
-  return useSnapshot(state);
+  return useSnapshot(state) as StateSnapshot<T>;
 }
