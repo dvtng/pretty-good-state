@@ -162,3 +162,34 @@ import { globalStore } from "pretty-good-state";
 const counter = globalStore.getState(CounterState);
 counter.increment();
 ```
+
+### Accessing Hooks in State
+
+There may be cases where you want to have access to hooks from within a state.
+The `runInComponent()` function lets you do this.
+
+```tsx
+const EmailFormState = defineState({
+  getIntl: runInComponent(() => {
+    return useIntl();
+  }),
+  email: "",
+  errorMessage: "",
+  validate() {
+    if (!this.email) {
+      this.errorMessage = this.getIntl().format("Email is required");
+      return false;
+    }
+    this.errorMessage = "";
+    return true;
+  },
+});
+```
+
+These `runInComponent()` functions are called in the component where the local
+state is created – i.e. when `useLocalState()` is called or when a Provider is
+rendered.
+
+Note that since `runInComponent()` requires a component context, it cannot be
+used in global state (i.e.
+`globalStore.getState(EmailFormState).validate()` will throw an error).

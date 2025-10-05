@@ -10,11 +10,10 @@ export type StateX<T extends object> = {
   readonly $: State<T>;
   readonly set: (fn: StateSetter<T>) => void;
   readonly constructor: StateConstructor<T>;
+  [INJECTABLES]: { fn: Function; result: unknown }[];
 };
 
-export type StateConstructor<T extends object> = ((
-  setInitialValue?: StateSetter<T>
-) => State<T>) & {
+export type StateConstructor<T extends object> = (() => State<T>) & {
   readonly Type: State<T>;
   readonly Provider: React.ComponentType<{
     children?: React.ReactNode;
@@ -23,6 +22,10 @@ export type StateConstructor<T extends object> = ((
 };
 
 export type StateSetter<T extends object> = (state: T) => void;
+
+const INJECTABLES = Symbol("INJECTABLES");
+const INJECTABLE_FN = Symbol("INJECTABLE_FN");
+const NOT_INJECTED = Symbol("NOT_INJECTED");
 
 export function defineState<T extends object>(
   initialValue: () => T
@@ -35,21 +38,38 @@ export function defineState<T extends object>(
 export function defineState<T extends object>(
   initialValue: T | (() => T)
 ): StateConstructor<T> {
-  const constructor = function (setInitialValue?: StateSetter<T>) {
+  const constructor = function () {
     const clonedInitialValue =
       typeof initialValue === "function"
         ? initialValue()
         : deepClone(initialValue);
 
-    setInitialValue?.(clonedInitialValue);
-
     const state = proxy(clonedInitialValue as State<T>);
+
+    const injectables: { fn: Function; result: unknown }[] = [];
 
     // Bind functions to the state object
     Object.getOwnPropertyNames(state).forEach((_key) => {
       const key = _key as keyof T;
       if (typeof state[key] === "function") {
-        state[key] = state[key].bind(state);
+        if (INJECTABLE_FN in state[key]) {
+          let index = injectables.length;
+          injectables.push({
+            fn: state[key].bind(state),
+            result: NOT_INJECTED,
+          });
+          state[key] = (() => {
+            const result = injectables[index].result;
+            if (result === NOT_INJECTED) {
+              throw new Error(
+                "Result of the runInComponent function has not been injected yet."
+              );
+            }
+            return result;
+          }) as State<T>[keyof T];
+        } else {
+          state[key] = state[key].bind(state);
+        }
       }
     });
 
@@ -65,6 +85,9 @@ export function defineState<T extends object>(
       },
       $: {
         get: () => ref(state),
+      },
+      [INJECTABLES]: {
+        value: injectables,
       },
     });
 
@@ -105,8 +128,13 @@ export function useLocalState<T extends object>(
     state.current === undefined ||
     state.current?.constructor !== constructor
   ) {
-    state.current = constructor(setInitialValue);
+    state.current = constructor();
+    setInitialValue?.(state.current);
   }
+
+  state.current[INJECTABLES].forEach((injectable) => {
+    injectable.result = injectable.fn();
+  });
 
   return useSnapshot(state.current) as StateSnapshot<T>;
 }
@@ -162,4 +190,9 @@ export function useProvidedState<T extends object>(
   const store = useContext(StoreContext);
   const state = store.getState(constructor);
   return useSnapshot(state) as StateSnapshot<T>;
+}
+
+export function runInComponent<T>(fn: () => T): () => T {
+  Object.defineProperty(fn, INJECTABLE_FN, { value: true });
+  return fn;
 }
