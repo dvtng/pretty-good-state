@@ -7,7 +7,7 @@ export type State<T extends object> = T & StateX<T>;
 export type StateSnapshot<T extends object> = Snapshot<T> & StateX<T>;
 
 export type StateX<T extends object> = {
-  readonly $: T;
+  readonly $: State<T>;
   readonly set: (fn: StateSetter<T>) => void;
   readonly constructor: StateConstructor<T>;
 };
@@ -16,6 +16,10 @@ export type StateConstructor<T extends object> = ((
   setInitialValue?: StateSetter<T>
 ) => State<T>) & {
   readonly Type: State<T>;
+  readonly Provider: React.ComponentType<{
+    children?: React.ReactNode;
+    state?: StateX<T>;
+  }>;
 };
 
 export type StateSetter<T extends object> = (state: T) => void;
@@ -39,30 +43,49 @@ export function defineState<T extends object>(
 
     setInitialValue?.(clonedInitialValue);
 
-    const state: State<T> = proxy({
-      ...clonedInitialValue,
-      get $() {
-        return ref(state);
-      },
-      set: (fn) => {
-        fn(state);
-      },
-      constructor,
-    });
+    const state = proxy(clonedInitialValue as State<T>);
 
     // Bind functions to the state object
     Object.getOwnPropertyNames(state).forEach((_key) => {
       const key = _key as keyof T;
-      if (key === "$" || key === "set" || key === "constructor") {
-        return;
-      }
       if (typeof state[key] === "function") {
         state[key] = state[key].bind(state);
       }
     });
 
+    // Add StateX properties
+    Object.defineProperties(state, {
+      constructor: {
+        value: constructor,
+      },
+      set: {
+        value: (fn: StateSetter<T>) => {
+          fn(state);
+        },
+      },
+      $: {
+        get: () => ref(state),
+      },
+    });
+
     return state;
   } as StateConstructor<T>;
+
+  Object.assign(constructor, {
+    Provider: function StateProvider({
+      children,
+      state,
+    }: {
+      children?: React.ReactNode;
+      state?: StateX<T>;
+    }) {
+      const stateRef = useRef<StateX<T>>(undefined);
+      if (stateRef.current === undefined || stateRef.current.$ !== state?.$) {
+        stateRef.current = state ?? constructor();
+      }
+      return <Provider state={stateRef.current}>{children}</Provider>;
+    },
+  });
 
   return constructor;
 }
@@ -76,9 +99,12 @@ export function useLocalState<T extends object>(
   constructor: StateConstructor<T>,
   setInitialValue?: StateSetter<T>
 ) {
-  const state = useRef<State<T> | null>(null);
+  const state = useRef<State<T>>(undefined);
 
-  if (state.current === null || state.current?.constructor !== constructor) {
+  if (
+    state.current === undefined ||
+    state.current?.constructor !== constructor
+  ) {
     state.current = constructor(setInitialValue);
   }
 

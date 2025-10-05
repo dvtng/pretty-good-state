@@ -1,5 +1,4 @@
 import {
-  Provider,
   ref,
   defineState,
   useLocalState,
@@ -64,7 +63,7 @@ export function ScrollView({
         state.$.left = e.currentTarget.scrollLeft;
       }}
     >
-      <Provider state={state}>{children}</Provider>
+      <ScrollState.Provider state={state}>{children}</ScrollState.Provider>
     </div>
   );
 }

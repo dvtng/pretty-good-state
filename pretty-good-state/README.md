@@ -27,8 +27,8 @@ You can also define methods on the state that directly mutate it:
 ```tsx
 const CounterState = defineState({
   count: 0,
-  increment() {
-    this.count++;
+  increment(amount = 1) {
+    this.count += amount;
   },
 });
 ```
@@ -65,30 +65,11 @@ const counter = useLocalState(CounterState, (state) => {
 
 ### Shared State
 
-Use `Provider` and `useProvidedState()` to share state for a portion
+Use `useProvidedState()` with a `Provider` to share state for a portion
 of your React tree:
 
 ```tsx
-import { defineState, Provider, useProvidedState } from "pretty-good-state";
-
-const CounterState = defineState({
-  count: 0,
-  increment() {
-    this.count++;
-  },
-});
-
-function Page() {
-  const counter = useLocalState(CounterState);
-
-  return (
-    <Provider state={counter}>
-      {/* The following counters will share the same state */}
-      <Counter />
-      <Counter />
-    </Provider>
-  );
-}
+import { useProvidedState } from "pretty-good-state";
 
 function Counter() {
   const counter = useProvidedState(CounterState);
@@ -100,10 +81,37 @@ function Counter() {
     </div>
   );
 }
+
+function Page() {
+  return (
+    <CounterState.Provider>
+      {/* The following counters will share the same state */}
+      <Counter />
+      <Counter />
+    </CounterState.Provider>
+  );
+}
 ```
 
 You can also call `useProvidedState()` without a Provider, in which case it will
 use a shared global state.
+
+If you pass a state object to the Provider, it will use that state object
+instead of creating a new one. This is useful when you want to access the state
+in the same component that renders the Provider:
+
+```tsx
+function Page() {
+  const counter = useLocalState(CounterState);
+
+  return (
+    <CounterState.Provider state={counter}>
+      <Counter />
+      <button onClick={() => counter.increment(10)}>Increment 10</button>
+    </CounterState.Provider>
+  );
+}
+```
 
 ### Accessing and Mutating the "Live" State
 
@@ -144,7 +152,7 @@ function handleIncrement() {
 }
 ```
 
-### Accessing global state outside of a component
+### Accessing Global State Outside of a Component
 
 The `globalStore` object lets you access global state outside of a component:
 
