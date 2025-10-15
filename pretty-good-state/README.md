@@ -183,3 +183,29 @@ rendered.
 Note that since `runInComponent()` requires a component context, it cannot be
 used in global state (i.e.
 `globalStore.getState(EmailFormState).validate()` will throw an error).
+
+### TypeScript Types
+
+You can infer the types of the state and its snapshot from the constructor:
+
+```tsx
+const CounterState = defineState({
+  count: 0,
+});
+
+type CounterState = typeof CounterState.State;
+type CounterSnapshot = typeof CounterState.Snapshot;
+```
+
+Alternatively, you can use the `State` and `Snapshot` generic types:
+
+```tsx
+import { State, Snapshot } from "pretty-good-state";
+
+const AppState = defineState({
+  user: User;
+});
+
+type UserState = State<User>;
+type UserSnapshot = Snapshot<User>;
+```
