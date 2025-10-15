@@ -34,16 +34,20 @@ export function ScrollView({
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        state.$.width = width;
-        state.$.height = height;
+        state.$((state) => {
+          state.width = width;
+          state.height = height;
+        });
       }
     });
 
     resizeObserver.observe(element);
 
     // Set initial dimensions
-    state.$.width = element.clientWidth;
-    state.$.height = element.clientHeight;
+    state.$((state) => {
+      state.width = element.clientWidth;
+      state.height = element.clientHeight;
+    });
 
     return () => {
       resizeObserver.disconnect();
@@ -54,13 +58,17 @@ export function ScrollView({
     <div
       ref={(el) => {
         if (el) {
-          state.$.el = ref(el);
+          state.$((state) => {
+            state.el = ref(el);
+          });
         }
       }}
       className={twMerge("relative overflow-y-auto", className)}
       onScroll={(e) => {
-        state.$.top = e.currentTarget.scrollTop;
-        state.$.left = e.currentTarget.scrollLeft;
+        state.$((state) => {
+          state.top = e.currentTarget.scrollTop;
+          state.left = e.currentTarget.scrollLeft;
+        });
       }}
     >
       <ScrollState.Provider state={state}>{children}</ScrollState.Provider>

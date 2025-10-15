@@ -1,23 +1,49 @@
 import { createContext, useContext, useRef } from "react";
-import { proxy, ref, useSnapshot, type Snapshot } from "valtio";
-import { deepClone } from "valtio/utils";
+import { ref, useSnapshot } from "valtio";
+import { unstable_deepProxy } from "valtio/utils";
+import { patchValtio } from "./patch-valtio";
 
-export type State<T extends object> = T & StateX<T>;
+patchValtio();
 
-export type StateSnapshot<T extends object> = Snapshot<T> & StateX<T>;
-
-export type StateX<T extends object> = {
-  readonly $: State<T>;
-  readonly set: (fn: StateSetter<T>) => void;
-  readonly constructor: StateConstructor<T>;
-  [INJECTABLES]: { fn: Function; result: unknown }[];
+export type State<T extends object, C extends boolean = false> = Pointer<
+  T,
+  C
+> & {
+  [K in keyof T]: T[K] extends Ignored
+    ? T[K]
+    : T[K] extends object
+    ? State<T[K], false>
+    : T[K];
 };
 
-export type StateConstructor<T extends object> = (() => State<T>) & {
-  readonly Type: State<T>;
+export type Pointer<T extends object, C extends boolean = false> = {
+  $: (fn?: (state: State<T, C>) => void) => State<T, C>;
+} & (C extends true
+  ? {
+      constructor: StateConstructor<T>;
+      [INJECTABLES]: { fn: Function; result: unknown }[];
+    }
+  : {});
+
+export type Snapshot<T extends object, C extends boolean = false> = Pointer<
+  T,
+  C
+> & {
+  readonly [K in keyof T]: T[K] extends Ignored
+    ? T[K]
+    : T[K] extends object
+    ? Snapshot<T[K], false>
+    : T[K];
+};
+
+export type StateConstructor<T extends object> = ((
+  setInitial?: StateSetter<T>
+) => State<T, true>) & {
+  readonly State: State<T, true>;
+  readonly Snapshot: Snapshot<T, true>;
   readonly Provider: React.ComponentType<{
     children?: React.ReactNode;
-    state?: StateX<T>;
+    state?: Pointer<T, true>;
   }>;
 };
 
@@ -38,57 +64,43 @@ export function defineState<T extends object>(
 export function defineState<T extends object>(
   initialValue: T | (() => T)
 ): StateConstructor<T> {
-  const constructor = function () {
-    const clonedInitialValue =
-      typeof initialValue === "function"
-        ? initialValue()
-        : deepClone(initialValue);
+  const constructor = function (setInitialValue?: StateSetter<T>) {
+    const state = unstable_deepProxy(
+      typeof initialValue === "function" ? initialValue() : initialValue
+    );
 
-    const state = proxy(clonedInitialValue as State<T>);
+    setInitialValue?.(state);
 
     const injectables: { fn: Function; result: unknown }[] = [];
 
-    // Bind functions to the state object
-    Object.getOwnPropertyNames(state).forEach((_key) => {
-      const key = _key as keyof T;
-      if (typeof state[key] === "function") {
-        if (INJECTABLE_FN in state[key]) {
-          let index = injectables.length;
-          injectables.push({
-            fn: state[key].bind(state),
-            result: NOT_INJECTED,
-          });
-          state[key] = (() => {
-            const result = injectables[index].result;
-            if (result === NOT_INJECTED) {
-              throw new Error(
-                "Result of the runInComponent function has not been injected yet."
-              );
-            }
-            return result;
-          }) as State<T>[keyof T];
-        } else {
-          state[key] = state[key].bind(state);
-        }
-      }
-    });
-
-    // Add StateX properties
     Object.defineProperties(state, {
       constructor: {
         value: constructor,
       },
-      set: {
-        value: (fn: StateSetter<T>) => {
-          fn(state);
-        },
-      },
-      $: {
-        get: () => ref(state),
-      },
-      [INJECTABLES]: {
+      [INJECTABLES]: ref({
         value: injectables,
-      },
+      }),
+    });
+
+    // Bind runInComponent functions
+    Object.getOwnPropertyNames(state).forEach((_key) => {
+      const key = _key as keyof T;
+      if (typeof state[key] === "function" && INJECTABLE_FN in state[key]) {
+        let index = injectables.length;
+        injectables.push({
+          fn: state[key].bind(state),
+          result: NOT_INJECTED,
+        });
+        state[key] = (() => {
+          const result = injectables[index].result;
+          if (result === NOT_INJECTED) {
+            throw new Error(
+              "Result of the runInComponent function has not been injected yet."
+            );
+          }
+          return result;
+        }) as T[keyof T];
+      }
     });
 
     return state;
@@ -100,11 +112,11 @@ export function defineState<T extends object>(
       state,
     }: {
       children?: React.ReactNode;
-      state?: StateX<T>;
+      state?: Pointer<T, true>;
     }) {
-      const stateRef = useRef<StateX<T>>(undefined);
-      if (stateRef.current === undefined || stateRef.current.$ !== state?.$) {
-        stateRef.current = state ?? constructor();
+      const stateRef = useRef<State<T, true>>(undefined);
+      if (stateRef.current === undefined || stateRef.current !== state?.$()) {
+        stateRef.current = state?.$() ?? constructor();
       }
       return <Provider state={stateRef.current}>{children}</Provider>;
     },
@@ -122,21 +134,20 @@ export function useLocalState<T extends object>(
   constructor: StateConstructor<T>,
   setInitialValue?: StateSetter<T>
 ) {
-  const state = useRef<State<T>>(undefined);
+  const state = useRef<State<T, true>>(undefined);
 
   if (
     state.current === undefined ||
     state.current?.constructor !== constructor
   ) {
-    state.current = constructor();
-    setInitialValue?.(state.current);
+    state.current = constructor(setInitialValue);
   }
 
   state.current[INJECTABLES].forEach((injectable) => {
     injectable.result = injectable.fn();
   });
 
-  return useSnapshot(state.current) as StateSnapshot<T>;
+  return useSnapshot(state.current) as Snapshot<T, true>;
 }
 
 export class Store {
@@ -144,18 +155,19 @@ export class Store {
 
   constructor(private parent?: Store) {}
 
-  setState<T extends object>(state: StateX<T>): void {
-    this.states.set(state.constructor, state.$);
+  setState<T extends object>(state: Pointer<T>): void {
+    this.states.set(state.constructor as StateConstructor<any>, state.$());
   }
 
   getState<T extends object>(constructor: StateConstructor<T>): State<T> {
     let state =
-      this.states.get(constructor) ?? this.parent?.getState(constructor);
+      this.states.get(constructor as StateConstructor<any>) ??
+      this.parent?.getState(constructor);
     if (!state) {
       state = constructor();
       this.setState(state);
     }
-    return state;
+    return state as State<T>;
   }
 }
 
@@ -167,7 +179,7 @@ export function Provider<T extends object>({
   state,
   children,
 }: {
-  state: StateX<T>;
+  state: Pointer<T, true>;
   children?: React.ReactNode;
 }) {
   const parentStore = useContext(StoreContext);
@@ -184,15 +196,41 @@ export function Provider<T extends object>({
   );
 }
 
-export function useProvidedState<T extends object>(
-  constructor: StateConstructor<T>
+export function useProvidedState<T extends object, C extends boolean = false>(
+  constructorOrPointer: StateConstructor<T> | Pointer<T, C>
 ) {
   const store = useContext(StoreContext);
-  const state = store.getState(constructor);
-  return useSnapshot(state) as StateSnapshot<T>;
+  const state =
+    typeof constructorOrPointer === "function"
+      ? store.getState(constructorOrPointer)
+      : constructorOrPointer.$();
+  return useSnapshot(state) as Snapshot<T, C>;
 }
 
 export function runInComponent<T>(fn: () => T): () => T {
   Object.defineProperty(fn, INJECTABLE_FN, { value: true });
   return fn;
 }
+
+export function isRunInComponent(value: unknown): boolean {
+  return typeof value === "function" && INJECTABLE_FN in value;
+}
+
+/** Function type for any kind of function */
+type AnyFunction = (...args: any[]) => any;
+
+/** JavaScript primitive types */
+type Primitive = string | number | boolean | null | undefined | symbol | bigint;
+
+/** Types that should not be proxied */
+type Ignored =
+  | Date
+  | Map<any, any>
+  | Set<any>
+  | WeakMap<any, any>
+  | WeakSet<any>
+  | Error
+  | RegExp
+  | AnyFunction
+  | Primitive
+  | { $$valtioSnapshot: any };

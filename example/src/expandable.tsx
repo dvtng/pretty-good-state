@@ -29,11 +29,7 @@ export function Expandable({ content }: { content: string }) {
 
 function ExpandButton() {
   const state = useProvidedState(ExpandableState);
-  return (
-    <button onClick={() => state.toggle()}>
-      {state.isExpanded ? "-" : "+"}
-    </button>
-  );
+  return <button onClick={state.toggle}>{state.isExpanded ? "-" : "+"}</button>;
 }
 
 function ExpandableContent({ content }: { content: string }) {
