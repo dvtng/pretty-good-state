@@ -125,11 +125,6 @@ export function defineState<T extends object>(
   return constructor;
 }
 
-/**
- * @deprecated Use `defineState` instead.
- */
-export const state = defineState;
-
 export function useLocalState<T extends object>(
   constructor: StateConstructor<T>,
   setInitialValue?: StateSetter<T>
