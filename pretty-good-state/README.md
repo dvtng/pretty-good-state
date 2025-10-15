@@ -28,6 +28,7 @@ You can also define methods on the state that directly mutate it:
 const CounterState = defineState({
   count: 0,
   increment(amount = 1) {
+    // `this` is bound to the state
     this.count += amount;
   },
 });
@@ -117,14 +118,16 @@ function Page() {
 
 When calling `useLocalState()` or `useProvidedState()`, the returned object
 is a read-only snapshot of the state. This is essential for tracking which
-properties are used in rendering the component. However, you can also access the
-"live", mutable state directly using the `$` property.
+properties are used in rendering the component. Use the `$` function to access
+the "live", mutable state.
 
 ```tsx
 const counter = useLocalState(CounterState);
 
 function handleReset() {
-  counter.$.count = 0;
+  counter.$((counter) => {
+    counter.count = 0;
+  });
 }
 ```
 
@@ -135,20 +138,7 @@ const counter = useLocalState(CounterState);
 
 function handleIncrement() {
   counter.increment();
-  console.log(counter.$.count);
-}
-```
-
-Alternatively, you can use the `set` method to distinguish mutations from state
-access:
-
-```tsx
-const counter = useLocalState(CounterState);
-
-function handleIncrement() {
-  counter.set((state) => {
-    state.count++;
-  });
+  console.log(counter.$().count);
 }
 ```
 
