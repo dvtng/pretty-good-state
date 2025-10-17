@@ -2,6 +2,14 @@
 
 A just-enough state management library for React. Built on top of `valtio`.
 
+✅ Fine-grained reactivity
+
+✅ Simple and intuitive mutations
+
+✅ Full TypeScript support
+
+✅ Unified API for component-local and context-provided state
+
 ## Installation
 
 ```bash
