@@ -224,7 +224,7 @@ You can directly pass state to child components:
 import { defineState, useLocalState, Snapshot } from "pretty-good-state";
 
 const TodoListState = defineState({
-  todos: [] as Todo[],
+  items: [] as Todo[],
 });
 
 type Todo = {
@@ -234,10 +234,10 @@ type Todo = {
 };
 
 function TodoList() {
-  const todos = useLocalState(TodoListState);
+  const todoList = useLocalState(TodoListState);
   return (
     <div>
-      {todos.todos.map((todo) => (
+      {todoList.items.map((todo) => (
         <TodoItem key={todo.id} todo={todo} />
       ))}
     </div>
