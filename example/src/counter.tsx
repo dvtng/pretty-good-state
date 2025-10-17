@@ -41,7 +41,7 @@ export function Counter({ initialCount = 0 }: { initialCount?: number }) {
         <button
           onClick={() => {
             if (state.getIsDisabled()) return;
-            state.$().count = initialCount;
+            state.count = initialCount;
           }}
         >
           Reset

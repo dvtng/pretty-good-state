@@ -1,2 +1,3 @@
 export * from "./core";
-export { ref, snapshot, subscribe } from "valtio";
+export { $ } from "./patch-valtio";
+export { ref, snapshot, subscribe, type Snapshot } from "valtio";

@@ -1,31 +1,11 @@
-import { createContext, useContext, useRef } from "react";
-import { useSnapshot } from "valtio";
+import { createContext, useContext, useLayoutEffect, useRef } from "react";
+import { useSnapshot, type Snapshot } from "valtio";
 import { unstable_deepProxy } from "valtio/utils";
-import { patchValtio } from "./patch-valtio";
+import { patchValtio, $ } from "./patch-valtio";
 
 patchValtio();
 
-export type State<T extends object> = {
-  [K in keyof T]: T[K] extends Ignored
-    ? T[K]
-    : T[K] extends object
-    ? State<T[K]>
-    : T[K];
-} & Pointer<T>;
-
-export type Snapshot<T extends object> = {
-  readonly [K in keyof T]: T[K] extends Ignored
-    ? T[K]
-    : T[K] extends object
-    ? Snapshot<T[K]>
-    : T[K];
-} & Pointer<T>;
-
-export type Pointer<T extends object> = {
-  $: (fn?: (state: State<T>) => void) => State<T>;
-};
-
-export type Shape<T extends StateConstructor<any>> = T extends StateConstructor<
+export type Infer<T extends StateConstructor<any>> = T extends StateConstructor<
   infer U
 >
   ? U
@@ -33,10 +13,10 @@ export type Shape<T extends StateConstructor<any>> = T extends StateConstructor<
 
 export type StateConstructor<T extends object> = ((
   setInitial?: StateSetter<T>
-) => State<T>) & {
+) => T) & {
   readonly Provider: React.ComponentType<{
     children?: React.ReactNode;
-    state?: Pointer<T>;
+    state?: T;
   }>;
 };
 
@@ -55,8 +35,8 @@ const meta = new WeakMap<
   }
 >();
 
-function getMeta<T extends object>(pointer: Pointer<T>) {
-  const stateMeta = meta.get(pointer.$());
+function getMeta<T extends object>(state: T) {
+  const stateMeta = meta.get($(state));
   if (!stateMeta) {
     throw new Error("State metadata not found");
   }
@@ -106,7 +86,7 @@ export function defineState<T extends object>(
       }
     });
 
-    return state as State<T>;
+    return state;
   } as StateConstructor<T>;
 
   Object.assign(constructor, {
@@ -115,11 +95,14 @@ export function defineState<T extends object>(
       state,
     }: {
       children?: React.ReactNode;
-      state?: Pointer<T>;
+      state?: T;
     }) {
-      const stateRef = useRef<State<T>>(undefined);
-      if (stateRef.current === undefined || stateRef.current !== state?.$()) {
-        stateRef.current = state?.$() ?? constructor();
+      const stateRef = useRef<T>(undefined);
+      if (
+        stateRef.current === undefined ||
+        stateRef.current !== (state ? $(state) : undefined)
+      ) {
+        stateRef.current = (state ? $(state) : undefined) ?? constructor();
       }
       return <Provider state={stateRef.current}>{children}</Provider>;
     },
@@ -134,7 +117,7 @@ export function useLocalState<T extends object>(
     | StateSetter<T>
     | (SnapshotOptions & { setInitialValue?: StateSetter<T> })
 ) {
-  const state = useRef<State<T>>(undefined);
+  const state = useRef<T>(undefined);
 
   if (
     state.current === undefined ||
@@ -150,26 +133,26 @@ export function useLocalState<T extends object>(
   });
 
   const snapshotOptions = typeof options === "function" ? undefined : options;
-  return useSnapshot(state.current, snapshotOptions) as Snapshot<T>;
+  return usePassedState(state.current, snapshotOptions);
 }
 
 export class Store {
-  private states: Map<StateConstructor<any>, State<any>> = new Map();
+  private states: Map<StateConstructor<any>, any> = new Map();
 
   constructor(private parent?: Store) {}
 
-  setState<T extends object>(state: Pointer<T>): void {
-    this.states.set(getMeta(state).constructor, state.$());
+  setState<T extends object>(state: T): void {
+    this.states.set(getMeta(state).constructor, $(state));
   }
 
-  getState<T extends object>(constructor: StateConstructor<T>): State<T> {
+  getState<T extends object>(constructor: StateConstructor<T>): T {
     let state =
       this.states.get(constructor) ?? this.parent?.getState(constructor);
     if (!state) {
       state = constructor();
       this.setState(state);
     }
-    return state as State<T>;
+    return state;
   }
 }
 
@@ -181,7 +164,7 @@ export function Provider<T extends object>({
   state,
   children,
 }: {
-  state: Pointer<T>;
+  state: T;
   children?: React.ReactNode;
 }) {
   const parentStore = useContext(StoreContext);
@@ -204,14 +187,43 @@ export function useProvidedState<T extends object>(
 ) {
   const store = useContext(StoreContext);
   const state = store.getState(constructor);
-  return useSnapshot(state, snapshotOptions) as Snapshot<T>;
+  return usePassedState(state, snapshotOptions);
 }
 
+const DUMMY_PROP = Symbol("DUMMY_PROP");
+
 export function usePassedState<T extends object>(
-  state: Pointer<T>,
+  state: T,
   snapshotOptions?: SnapshotOptions
 ) {
-  return useSnapshot(state.$(), snapshotOptions) as Snapshot<T>;
+  const proxy = $(state);
+  const snapshot = useSnapshot(proxy, snapshotOptions);
+
+  // touch dummy prop so that it doesn't trigger re-renders when no props are touched.
+  (snapshot as any)[DUMMY_PROP];
+
+  let isRendering = true;
+  useLayoutEffect(() => {
+    isRendering = false;
+  });
+
+  function makeProxy<T extends object>(proxy: T, snapshot: Snapshot<T>) {
+    return new Proxy(proxy, {
+      get(target, prop, receiver) {
+        const value = Reflect.get(target, prop, receiver);
+        if (!isRendering) {
+          return value;
+        }
+        const snapshotValue = (snapshot as any)[prop];
+        if (typeof value === "object" && value !== null) {
+          return makeProxy(value, snapshotValue);
+        }
+        return snapshotValue;
+      },
+    });
+  }
+
+  return makeProxy(proxy, snapshot);
 }
 
 export function runInComponent<T>(fn: () => T): () => T {

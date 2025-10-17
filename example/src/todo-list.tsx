@@ -1,9 +1,4 @@
-import {
-  defineState,
-  Pointer,
-  useLocalState,
-  usePassedState,
-} from "pretty-good-state";
+import { defineState, useLocalState, usePassedState } from "pretty-good-state";
 
 export type Todo = {
   id: string;
@@ -41,18 +36,17 @@ export function TodoList() {
     state.addTodo("Profit");
   });
   const syncState = usePassedState(state, { sync: true });
+  const { todos } = state;
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="text-base">Todo List ({state.todos.length})</div>
+      <div className="text-base">Todo List ({todos.length})</div>
       <form
         className="flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           state.addTodo(state.input);
-          state.$((state) => {
-            state.input = "";
-          });
+          state.input = "";
         }}
       >
         <input
@@ -60,23 +54,28 @@ export function TodoList() {
           placeholder="Add a todo"
           value={syncState.input}
           onChange={(e) => {
-            state.$((state) => {
-              state.input = e.target.value;
-            });
+            state.input = e.target.value;
           }}
         />
         <button type="submit">+</button>
       </form>
       <div>
-        {state.todos.map((todo) => (
+        {todos.map((todo) => (
           <TodoItem key={todo.id} todo={todo} />
         ))}
       </div>
+      <button
+        onClick={() => {
+          todos.length = 0;
+        }}
+      >
+        Clear
+      </button>
     </div>
   );
 }
 
-function TodoItem({ todo: _todo }: { todo: Pointer<Todo> }) {
+function TodoItem({ todo: _todo }: { todo: Todo }) {
   const todo = usePassedState(_todo);
   return (
     <label className="flex gap-2 items-center border-t py-2">

@@ -1,23 +1,19 @@
-import { snapshot, subscribe } from "valtio";
 import { expect, test, mock } from "bun:test";
 import { defineState, runInComponent } from "../core";
 import { createContext, useContext } from "react";
 
-test("mutating from a snapshot pointer", () => {
-  const State = defineState({
-    list: { items: [1, 2, 3] },
+test("PROXY_REFs are not enumerable", () => {
+  const State = defineState({} as Record<string, number>);
+
+  const state = State((state) => {
+    state.a = 1;
+    state.b = 2;
+    state.c = 3;
   });
 
-  const state = State();
-
-  const subscriberMock = mock(() => {});
-  subscribe(state, subscriberMock, true);
-
-  expect(subscriberMock).toHaveBeenCalledTimes(0);
-  snapshot(state).$().list.items.push(4);
-  expect(subscriberMock).toHaveBeenCalledTimes(1);
-  snapshot(state).list.items.$().push(5);
-  expect(subscriberMock).toHaveBeenCalledTimes(2);
+  const sum = Object.entries(state).reduce((acc, [_, value]) => acc + value, 0);
+  expect(sum).toBe(6);
+  expect(Object.keys(state)).toEqual(["a", "b", "c"]);
 });
 
 test("replacing runInComponent functions in tests", () => {

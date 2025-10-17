@@ -1,11 +1,17 @@
 import { unstable_replaceInternalFunction } from "valtio";
-import { isRunInComponent, type State } from "./core";
+import { isRunInComponent } from "./core";
+
+const PROXY_REF = Symbol("$");
+
+export function $<T extends object>(state: T): T {
+  return (state as any)[PROXY_REF]();
+}
 
 export function patchValtio() {
   unstable_replaceInternalFunction("newProxy", (prev) => {
     return (object, handler) => {
       const proxy = prev(object, handler);
-      if (!("$" in object)) {
+      if (!(PROXY_REF in object)) {
         // Bind functions to the proxy
         Object.getOwnPropertyNames(object).forEach((_prop) => {
           const prop = _prop as keyof typeof object;
@@ -17,9 +23,8 @@ export function patchValtio() {
         });
 
         Object.defineProperties(object, {
-          $: {
-            value: (fn?: (state: State<typeof object>) => void) => {
-              fn?.(proxy as State<typeof object>);
+          [PROXY_REF]: {
+            value: () => {
               return proxy;
             },
           },

@@ -1,6 +1,6 @@
 # pretty-good-state
 
-A just-enough state management library for React. Built on top of `valtio`.
+A just-enough state management library for React. Built on top of [valtio](https://github.com/pmndrs/valtio).
 
 ✅ Fine-grained reactivity
 
@@ -16,7 +16,7 @@ A just-enough state management library for React. Built on top of `valtio`.
 npm install pretty-good-state
 ```
 
-## Basic Usage
+## Usage
 
 ### Creating State
 
@@ -41,9 +41,6 @@ const CounterState = defineState({
   },
 });
 ```
-
-We use [valtio](https://github.com/pmndrs/valtio) under the hood to
-track mutations and re-render the components that depend on those exact changes.
 
 ### Local State
 
@@ -124,37 +121,96 @@ function Page() {
 }
 ```
 
-### Accessing and Mutating the "Live" State
+### Mutating State
 
-When calling `useLocalState()` or `useProvidedState()`, the returned object
-is a read-only snapshot of the state. This is essential for tracking which
-properties are used in rendering the component. Use the `$` function to access
-the "live", mutable state.
+In addition to defining state methods, you can also directly modify the state in
+components:
 
 ```tsx
 import { useLocalState } from "pretty-good-state";
 
 const counter = useLocalState(CounterState);
 
-function handleReset() {
-  counter.$((counter) => {
-    counter.count = 0;
-  });
-}
+<button onClick={() => (counter.count = 0)}>Reset</button>;
 ```
 
-This can also be useful when you read the updated state after a mutation:
+The library detects mutations and re-renders the components that depend on those
+exact changes.
+
+### Passing State to Child Components
+
+You can directly pass state to child components:
 
 ```tsx
-import { useLocalState } from "pretty-good-state";
+import { defineState, useLocalState } from "pretty-good-state";
 
-const counter = useLocalState(CounterState);
+const TodoListState = defineState({
+  items: [] as Todo[],
+});
 
-function handleIncrement() {
-  counter.increment();
-  console.log(counter.$().count);
+type Todo = {
+  id: string;
+  text: string;
+  done: boolean;
+};
+
+function TodoList() {
+  const todoList = useLocalState(TodoListState);
+  return (
+    <div>
+      {todoList.items.map((todo) => (
+        <TodoItem key={todo.id} todo={todo} />
+      ))}
+    </div>
+  );
+}
+
+function TodoItem({ todo }: { todo: Todo }) {
+  return (
+    <div>
+      <input
+        type="checkbox"
+        checked={todo.done}
+        onChange={() => {
+          todo.done = !todo.done;
+        }}
+      />
+      <span>{todo.text}</span>
+    </div>
+  );
 }
 ```
+
+However, note that the hook `useLocalState()` is in the parent component,
+and as a result the parent is tracking changes to all state properties accessed
+in the child. The parent re-renders unnecessarily when, for example, `todo.done`
+is toggled.
+
+To optimize this, we can use the `usePassedState()` hook to allow the child
+component to track its own state:
+
+```tsx
+import { usePassedState } from "pretty-good-state";
+
+function TodoItem({ todo: _todo }: { todo: Todo }) {
+  const todo = usePassedState(_todo);
+  return (
+    <div>
+      <input
+        type="checkbox"
+        checked={todo.done}
+        onChange={() => {
+          todo.done = !todo.done;
+        }}
+      />
+      <span>{todo.text}</span>
+    </div>
+  );
+}
+```
+
+Notice how we rename `todo` to `_todo` as we destructure the component props.
+This helps to avoid accidental reads from the parent's copy of the state.
 
 ### Accessing Global State Outside of a Component
 
@@ -202,97 +258,14 @@ used in global state (i.e.
 
 ### TypeScript Types
 
-You can infer the types of the state and its snapshot from the constructor:
+You can infer the types of the state from its constructor:
 
 ```tsx
-import { defineState, Shape, State, Snapshot } from "pretty-good-state";
+import { defineState, Infer } from "pretty-good-state";
 
 const CounterState = defineState({
   count: 0,
 });
 
-type CounterShape = Shape<typeof CounterState>; // { count: number }
-type CounterState = State<CounterShape>; // { count: number } & Pointer<{ count: number }>
-type CounterSnapshot = Snapshot<CounterShape>; // { readonly count: number } & Pointer<{ count: number }>
+type CounterShape = Infer<typeof CounterState>; // { count: number }
 ```
-
-### Passing State to Child Components
-
-You can directly pass state to child components:
-
-```tsx
-import { defineState, useLocalState, Snapshot } from "pretty-good-state";
-
-const TodoListState = defineState({
-  items: [] as Todo[],
-});
-
-type Todo = {
-  id: string;
-  text: string;
-  done: boolean;
-};
-
-function TodoList() {
-  const todoList = useLocalState(TodoListState);
-  return (
-    <div>
-      {todoList.items.map((todo) => (
-        <TodoItem key={todo.id} todo={todo} />
-      ))}
-    </div>
-  );
-}
-
-function TodoItem({ todo }: { todo: Snapshot<Todo> }) {
-  return (
-    <div>
-      <input
-        type="checkbox"
-        checked={todo.done}
-        onChange={() =>
-          todo.$((todo) => {
-            todo.done = !todo.done;
-          })
-        }
-      />
-      <span>{todo.text}</span>
-    </div>
-  );
-}
-```
-
-Note that in this case the hook `useLocalState()` is in the parent component,
-and as a result the parent is tracking changes to all state properties accessed
-in the child. The parent re-renders unnecessarily when, for example, `todo.done`
-is toggled.
-
-To optimize this, we can use the `usePassedState()` hook to allow the child
-component to track its own state:
-
-```tsx
-import { usePassedState } from "pretty-good-state";
-
-function TodoItem({ todo: _todo }: { todo: Pointer<Todo> }) {
-  const todo = usePassedState(_todo);
-  return (
-    <div>
-      <input
-        type="checkbox"
-        checked={todo.done}
-        onChange={() =>
-          todo.$((todo) => {
-            todo.done = !todo.done;
-          })
-        }
-      />
-      <span>{todo.text}</span>
-    </div>
-  );
-}
-```
-
-Notice the use of the `Pointer<Todo>` type. This is a narrower type than
-`Snapshot<Todo>` that doesn't expose any of the actual state properties. This
-forces the child to only access the state through the `usePassedState()` hook,
-preventing accidental reads from the parent's copy.
