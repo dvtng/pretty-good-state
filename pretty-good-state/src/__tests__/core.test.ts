@@ -6,7 +6,7 @@ const State = defineState({
   list: { items: [1, 2, 3] },
 });
 
-test("snapshot backlinks", () => {
+test("mutating from a snapshot", () => {
   const state = State();
 
   const subscriberMock = mock(() => {});

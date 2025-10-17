@@ -102,6 +102,8 @@ instead of creating a new one. This is useful when you want to access the state
 in the same component that renders the Provider:
 
 ```tsx
+import { useLocalState } from "pretty-good-state";
+
 function Page() {
   const counter = useLocalState(CounterState);
 
@@ -122,6 +124,8 @@ properties are used in rendering the component. Use the `$` function to access
 the "live", mutable state.
 
 ```tsx
+import { useLocalState } from "pretty-good-state";
+
 const counter = useLocalState(CounterState);
 
 function handleReset() {
@@ -134,6 +138,8 @@ function handleReset() {
 This can also be useful when you read the updated state after a mutation:
 
 ```tsx
+import { useLocalState } from "pretty-good-state";
+
 const counter = useLocalState(CounterState);
 
 function handleIncrement() {
@@ -159,6 +165,8 @@ There may be cases where you want to have access to hooks from within a state.
 The `runInComponent()` function lets you do this.
 
 ```tsx
+import { defineState, runInComponent } from "pretty-good-state";
+
 const EmailFormState = defineState({
   getIntl: runInComponent(() => {
     return useIntl();
@@ -189,23 +197,94 @@ used in global state (i.e.
 You can infer the types of the state and its snapshot from the constructor:
 
 ```tsx
+import { defineState, Shape, State, Snapshot } from "pretty-good-state";
+
 const CounterState = defineState({
   count: 0,
 });
 
-type CounterState = typeof CounterState.State;
-type CounterSnapshot = typeof CounterState.Snapshot;
+type CounterShape = Shape<typeof CounterState>; // { count: number }
+type CounterState = State<CounterShape>; // { count: number } & Pointer<{ count: number }>
+type CounterSnapshot = Snapshot<CounterShape>; // { readonly count: number } & Pointer<{ count: number }>
 ```
 
-Alternatively, you can use the `State` and `Snapshot` generic types:
+### Passing State to Child Components
+
+You can directly pass state to child components:
 
 ```tsx
-import { State, Snapshot } from "pretty-good-state";
+import { defineState, useLocalState, Snapshot } from "pretty-good-state";
 
-const AppState = defineState({
-  user: User;
+const TodoListState = defineState({
+  todos: [] as Todo[],
 });
 
-type UserState = State<User>;
-type UserSnapshot = Snapshot<User>;
+type Todo = {
+  id: string;
+  text: string;
+  done: boolean;
+};
+
+function TodoList() {
+  const todos = useLocalState(TodoListState);
+  return (
+    <div>
+      {todos.todos.map((todo) => (
+        <TodoItem key={todo.id} todo={todo} />
+      ))}
+    </div>
+  );
+}
+
+function TodoItem({ todo }: { todo: Snapshot<Todo> }) {
+  return (
+    <div>
+      <input
+        type="checkbox"
+        checked={todo.done}
+        onChange={() =>
+          todo.$((todo) => {
+            todo.done = !todo.done;
+          })
+        }
+      />
+      <span>{todo.text}</span>
+    </div>
+  );
+}
 ```
+
+Note that in this case the hook `useLocalState()` is in the parent component,
+and as a result the parent is tracking changes to all state properties accessed
+in the child. The parent re-renders unnecessarily when, for example, `todo.done`
+is toggled.
+
+To optimize this, we can use the `usePassedState()` hook to allow the child
+component to track its own state:
+
+```tsx
+import { usePassedState } from "pretty-good-state";
+
+function TodoItem({ todoPointer }: { todoPointer: Pointer<Todo> }) {
+  const todo = usePassedState(todoPointer);
+  return (
+    <div>
+      <input
+        type="checkbox"
+        checked={todo.done}
+        onChange={() =>
+          todo.$((todo) => {
+            todo.done = !todo.done;
+          })
+        }
+      />
+      <span>{todo.text}</span>
+    </div>
+  );
+}
+```
+
+Notice the use of the `Pointer<Todo>` type. This is a narrower type than
+`Snapshot<Todo>` that doesn't expose any of the actual state properties. This
+forces the child to only access the state through the `usePassedState()` hook,
+preventing accidental reads from the parent's copy.

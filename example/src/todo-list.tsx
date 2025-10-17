@@ -2,7 +2,7 @@ import {
   defineState,
   Pointer,
   useLocalState,
-  useProvidedState,
+  usePassedState,
 } from "pretty-good-state";
 
 export type Todo = {
@@ -40,6 +40,7 @@ export function TodoList() {
     state.addTodo("???");
     state.addTodo("Profit");
   });
+  const syncState = usePassedState(state, { sync: true });
 
   return (
     <div className="flex flex-col gap-4">
@@ -57,7 +58,7 @@ export function TodoList() {
         <input
           className="flex-1"
           placeholder="Add a todo"
-          value={state.input}
+          value={syncState.input}
           onChange={(e) => {
             state.$((state) => {
               state.input = e.target.value;
@@ -76,7 +77,7 @@ export function TodoList() {
 }
 
 function TodoItem({ todoPointer }: { todoPointer: Pointer<Todo> }) {
-  const todo = useProvidedState(todoPointer);
+  const todo = usePassedState(todoPointer);
   return (
     <label className="flex gap-2 items-center border-t py-2">
       <input type="checkbox" checked={todo.done} onChange={todo.toggleDone} />

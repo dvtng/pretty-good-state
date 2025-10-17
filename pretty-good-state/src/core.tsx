@@ -1,57 +1,67 @@
 import { createContext, useContext, useRef } from "react";
-import { ref, useSnapshot } from "valtio";
+import { useSnapshot } from "valtio";
 import { unstable_deepProxy } from "valtio/utils";
 import { patchValtio } from "./patch-valtio";
 
 patchValtio();
 
-export type State<T extends object, C extends boolean = false> = Pointer<
-  T,
-  C
-> & {
+export type State<T extends object> = {
   [K in keyof T]: T[K] extends Ignored
     ? T[K]
     : T[K] extends object
-    ? State<T[K], false>
+    ? State<T[K]>
     : T[K];
-};
+} & Pointer<T>;
 
-export type Pointer<T extends object, C extends boolean = false> = {
-  $: (fn?: (state: State<T, C>) => void) => State<T, C>;
-} & (C extends true
-  ? {
-      constructor: StateConstructor<T>;
-      [INJECTABLES]: { fn: Function; result: unknown }[];
-    }
-  : {});
-
-export type Snapshot<T extends object, C extends boolean = false> = Pointer<
-  T,
-  C
-> & {
+export type Snapshot<T extends object> = {
   readonly [K in keyof T]: T[K] extends Ignored
     ? T[K]
     : T[K] extends object
-    ? Snapshot<T[K], false>
+    ? Snapshot<T[K]>
     : T[K];
+} & Pointer<T>;
+
+export type Pointer<T extends object> = {
+  $: (fn?: (state: State<T>) => void) => State<T>;
 };
+
+export type Shape<T extends StateConstructor<any>> = T extends StateConstructor<
+  infer U
+>
+  ? U
+  : never;
 
 export type StateConstructor<T extends object> = ((
   setInitial?: StateSetter<T>
-) => State<T, true>) & {
-  readonly State: State<T, true>;
-  readonly Snapshot: Snapshot<T, true>;
+) => State<T>) & {
   readonly Provider: React.ComponentType<{
     children?: React.ReactNode;
-    state?: Pointer<T, true>;
+    state?: Pointer<T>;
   }>;
 };
 
 export type StateSetter<T extends object> = (state: T) => void;
 
-const INJECTABLES = Symbol("INJECTABLES");
+export type SnapshotOptions = { sync?: boolean };
+
 const INJECTABLE_FN = Symbol("INJECTABLE_FN");
 const NOT_INJECTED = Symbol("NOT_INJECTED");
+
+const meta = new WeakMap<
+  object,
+  {
+    constructor: StateConstructor<any>;
+    injectables: { fn: Function; result: unknown }[];
+  }
+>();
+
+function getMeta<T extends object>(pointer: Pointer<T>) {
+  const stateMeta = meta.get(pointer.$());
+  if (!stateMeta) {
+    throw new Error("State metadata not found");
+  }
+  return stateMeta;
+}
 
 export function defineState<T extends object>(
   initialValue: () => T
@@ -73,14 +83,7 @@ export function defineState<T extends object>(
 
     const injectables: { fn: Function; result: unknown }[] = [];
 
-    Object.defineProperties(state, {
-      constructor: {
-        value: constructor,
-      },
-      [INJECTABLES]: ref({
-        value: injectables,
-      }),
-    });
+    meta.set(state, { constructor, injectables });
 
     // Bind runInComponent functions
     Object.getOwnPropertyNames(state).forEach((_key) => {
@@ -103,7 +106,7 @@ export function defineState<T extends object>(
       }
     });
 
-    return state;
+    return state as State<T>;
   } as StateConstructor<T>;
 
   Object.assign(constructor, {
@@ -112,9 +115,9 @@ export function defineState<T extends object>(
       state,
     }: {
       children?: React.ReactNode;
-      state?: Pointer<T, true>;
+      state?: Pointer<T>;
     }) {
-      const stateRef = useRef<State<T, true>>(undefined);
+      const stateRef = useRef<State<T>>(undefined);
       if (stateRef.current === undefined || stateRef.current !== state?.$()) {
         stateRef.current = state?.$() ?? constructor();
       }
@@ -127,22 +130,27 @@ export function defineState<T extends object>(
 
 export function useLocalState<T extends object>(
   constructor: StateConstructor<T>,
-  setInitialValue?: StateSetter<T>
+  options?:
+    | StateSetter<T>
+    | (SnapshotOptions & { setInitialValue?: StateSetter<T> })
 ) {
-  const state = useRef<State<T, true>>(undefined);
+  const state = useRef<State<T>>(undefined);
 
   if (
     state.current === undefined ||
-    state.current?.constructor !== constructor
+    getMeta(state.current).constructor !== constructor
   ) {
+    const setInitialValue =
+      typeof options === "function" ? options : options?.setInitialValue;
     state.current = constructor(setInitialValue);
   }
 
-  state.current[INJECTABLES].forEach((injectable) => {
+  getMeta(state.current).injectables.forEach((injectable) => {
     injectable.result = injectable.fn();
   });
 
-  return useSnapshot(state.current) as Snapshot<T, true>;
+  const snapshotOptions = typeof options === "function" ? undefined : options;
+  return useSnapshot(state.current, snapshotOptions) as Snapshot<T>;
 }
 
 export class Store {
@@ -151,13 +159,12 @@ export class Store {
   constructor(private parent?: Store) {}
 
   setState<T extends object>(state: Pointer<T>): void {
-    this.states.set(state.constructor as StateConstructor<any>, state.$());
+    this.states.set(getMeta(state).constructor, state.$());
   }
 
   getState<T extends object>(constructor: StateConstructor<T>): State<T> {
     let state =
-      this.states.get(constructor as StateConstructor<any>) ??
-      this.parent?.getState(constructor);
+      this.states.get(constructor) ?? this.parent?.getState(constructor);
     if (!state) {
       state = constructor();
       this.setState(state);
@@ -174,7 +181,7 @@ export function Provider<T extends object>({
   state,
   children,
 }: {
-  state: Pointer<T, true>;
+  state: Pointer<T>;
   children?: React.ReactNode;
 }) {
   const parentStore = useContext(StoreContext);
@@ -191,15 +198,20 @@ export function Provider<T extends object>({
   );
 }
 
-export function useProvidedState<T extends object, C extends boolean = false>(
-  constructorOrPointer: StateConstructor<T> | Pointer<T, C>
+export function useProvidedState<T extends object>(
+  constructor: StateConstructor<T>,
+  snapshotOptions?: SnapshotOptions
 ) {
   const store = useContext(StoreContext);
-  const state =
-    typeof constructorOrPointer === "function"
-      ? store.getState(constructorOrPointer)
-      : constructorOrPointer.$();
-  return useSnapshot(state) as Snapshot<T, C>;
+  const state = store.getState(constructor);
+  return useSnapshot(state, snapshotOptions) as Snapshot<T>;
+}
+
+export function usePassedState<T extends object>(
+  state: Pointer<T>,
+  snapshotOptions?: SnapshotOptions
+) {
+  return useSnapshot(state.$(), snapshotOptions) as Snapshot<T>;
 }
 
 export function runInComponent<T>(fn: () => T): () => T {

@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun test && bun run build"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^17.1.0",
