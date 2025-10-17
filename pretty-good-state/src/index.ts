@@ -1,2 +1,2 @@
 export * from "./core";
-export { ref } from "valtio";
+export { ref, snapshot, subscribe } from "valtio";
