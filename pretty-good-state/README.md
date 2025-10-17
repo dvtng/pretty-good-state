@@ -273,8 +273,8 @@ component to track its own state:
 ```tsx
 import { usePassedState } from "pretty-good-state";
 
-function TodoItem({ todoPointer }: { todoPointer: Pointer<Todo> }) {
-  const todo = usePassedState(todoPointer);
+function TodoItem({ todo: _todo }: { todo: Pointer<Todo> }) {
+  const todo = usePassedState(_todo);
   return (
     <div>
       <input

@@ -69,15 +69,15 @@ export function TodoList() {
       </form>
       <div>
         {state.todos.map((todo) => (
-          <TodoItem key={todo.id} todoPointer={todo} />
+          <TodoItem key={todo.id} todo={todo} />
         ))}
       </div>
     </div>
   );
 }
 
-function TodoItem({ todoPointer }: { todoPointer: Pointer<Todo> }) {
-  const todo = usePassedState(todoPointer);
+function TodoItem({ todo: _todo }: { todo: Pointer<Todo> }) {
+  const todo = usePassedState(_todo);
   return (
     <label className="flex gap-2 items-center border-t py-2">
       <input type="checkbox" checked={todo.done} onChange={todo.toggleDone} />
