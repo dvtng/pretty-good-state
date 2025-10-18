@@ -31,7 +31,7 @@ jobs:
         run: bun install
 
       - name: Build site
-        run: bun --filter site run build
+        run: bun run --filter site build
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
