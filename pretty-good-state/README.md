@@ -2,19 +2,17 @@
 
 A just-enough state management library for React. Built on top of [valtio](https://github.com/pmndrs/valtio).
 
+```bash
+npm install pretty-good-state
+```
+
 ✅ Fine-grained reactivity
 
 ✅ Simple and intuitive mutations
 
+✅ Unified API for local, global, and context state
+
 ✅ Full TypeScript support
-
-✅ Unified API for component-local and context-provided state
-
-## Installation
-
-```bash
-npm install pretty-good-state
-```
 
 ## Usage
 
