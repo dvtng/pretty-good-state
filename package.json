@@ -1,6 +1,6 @@
 {
   "workspaces": [
     "pretty-good-state",
-    "example"
+    "site"
   ]
 }
