@@ -19,7 +19,7 @@
     "dist/"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "prepublishOnly": "bun test && bun run build"
   },
   "devDependencies": {
@@ -32,7 +32,7 @@
   },
   "peerDependencies": {
     "react": ">=18.0.0 <20.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.6.3"
   },
   "dependencies": {
     "valtio": "^2.1.8"

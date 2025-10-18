@@ -17,7 +17,7 @@ test("PROXY_REFs are not enumerable", () => {
 });
 
 test("replacing runInComponent functions in tests", () => {
-  const AnalyticsContext = createContext({ track: () => {} });
+  const AnalyticsContext = createContext({ track: (event: string) => {} });
   const State = defineState({
     getAnalytics: runInComponent(() => {
       return useContext(AnalyticsContext);
