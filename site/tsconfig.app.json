@@ -22,7 +22,7 @@
     "noFallthroughCasesInSwitch": true,
 
     "paths": {
-      "pretty-good-state": ["../pretty-good-state"]
+      "pretty-good-state": ["../pretty-good-state/dist/index"]
     }
   },
   "include": ["src"]
