@@ -19,7 +19,11 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    "paths": {
+      "pretty-good-state": ["../pretty-good-state"]
+    }
   },
   "include": ["src"]
 }
