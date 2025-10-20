@@ -1,8 +1,4 @@
-import { Reader } from "./examples/reader";
-import { CodeExample } from "./code-example";
-import readerSource from "./examples/reader.tsx?raw";
-
-const highlightClass = "border-b-2 border-emerald-500 bg-emerald-50";
+import { TypographyExample } from "./examples/typography-example";
 
 export function App() {
   return (
@@ -14,33 +10,8 @@ export function App() {
         npm install pretty-good-state
         <div className="inline-block w-2 h-[1.2em] bg-black" />
       </code>
-      <div className="-mx-6">
-        <CodeExample
-          source={readerSource}
-          highlights={[
-            {
-              pattern: "ReaderState",
-              className: highlightClass,
-            },
-            { pattern: /\breaderState\b/g, className: highlightClass },
-            {
-              pattern: /\b(size|family)\b/g,
-              className: highlightClass,
-            },
-          ]}
-        >
-          <Reader>
-            <div className="py-3">
-              <p className="mb-2">
-                The just-enough state management library for React.
-              </p>
-              <p>✅ Fine-grained reactivity</p>
-              <p>✅ Simple and intuitive mutations</p>
-              <p>✅ Unified API for local, global, and context state</p>
-              <p>✅ Full TypeScript support</p>
-            </div>
-          </Reader>
-        </CodeExample>
+      <div className="-mx-6 mt-8">
+        <TypographyExample />
       </div>
     </div>
   );

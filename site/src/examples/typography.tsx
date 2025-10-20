@@ -1,6 +1,6 @@
 import { defineState, useLocalState } from "pretty-good-state";
 
-const ReaderState = defineState({
+const TypographyState = defineState({
   family: "sans-serif" as "sans-serif" | "serif",
   size: "medium" as "medium" | "large",
 });
@@ -10,8 +10,8 @@ const fontSizeMap = {
   large: "1.5rem",
 };
 
-export function Reader({ children }: { children: React.ReactNode }) {
-  const readerState = useLocalState(ReaderState);
+export function Typography({ children }: { children: React.ReactNode }) {
+  const typography = useLocalState(TypographyState);
 
   return (
     <div className="flex flex-col gap-4">
@@ -19,28 +19,28 @@ export function Reader({ children }: { children: React.ReactNode }) {
       <div className="toolbar">
         <div className="button-group">
           <button
-            aria-pressed={readerState.family === "sans-serif"}
-            onClick={() => (readerState.family = "sans-serif")}
+            aria-pressed={typography.family === "sans-serif"}
+            onClick={() => (typography.family = "sans-serif")}
           >
             Sans
           </button>
           <button
-            aria-pressed={readerState.family === "serif"}
-            onClick={() => (readerState.family = "serif")}
+            aria-pressed={typography.family === "serif"}
+            onClick={() => (typography.family = "serif")}
           >
             Serif
           </button>
         </div>
         <div className="button-group">
           <button
-            aria-pressed={readerState.size === "medium"}
-            onClick={() => (readerState.size = "medium")}
+            aria-pressed={typography.size === "medium"}
+            onClick={() => (typography.size = "medium")}
           >
             Medium
           </button>
           <button
-            aria-pressed={readerState.size === "large"}
-            onClick={() => (readerState.size = "large")}
+            aria-pressed={typography.size === "large"}
+            onClick={() => (typography.size = "large")}
           >
             Large
           </button>
@@ -50,8 +50,8 @@ export function Reader({ children }: { children: React.ReactNode }) {
       {/* Content */}
       <div
         style={{
-          fontFamily: readerState.family,
-          fontSize: fontSizeMap[readerState.size],
+          fontFamily: typography.family,
+          fontSize: fontSizeMap[typography.size],
         }}
       >
         {children}

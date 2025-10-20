@@ -12,7 +12,7 @@ button {
   }
 
   &[aria-pressed="true"]:not(:active) {
-    @apply border-blue-500 shadow-blue-600/60 text-blue-600;
+    @apply border-emerald-600 shadow-emerald-600/60 text-emerald-600 bg-emerald-50;
   }
 }
 
