@@ -2,6 +2,8 @@ import { Reader } from "./examples/reader";
 import { CodeExample } from "./code-example";
 import readerSource from "./examples/reader.tsx?raw";
 
+const highlightClass = "border-b-2 border-emerald-500 bg-emerald-50";
+
 export function App() {
   return (
     <div className="flex flex-col gap-8 px-6 py-16 max-w-[800px] mx-auto justify-center">
@@ -13,7 +15,20 @@ export function App() {
         <div className="inline-block w-2 h-[1.2em] bg-black" />
       </code>
       <div className="-mx-6">
-        <CodeExample source={readerSource}>
+        <CodeExample
+          source={readerSource}
+          highlights={[
+            {
+              pattern: "ReaderState",
+              className: highlightClass,
+            },
+            { pattern: /\breaderState\b/g, className: highlightClass },
+            {
+              pattern: /\b(size|family)\b/g,
+              className: highlightClass,
+            },
+          ]}
+        >
           <Reader>
             <div className="py-3">
               <p className="mb-2">

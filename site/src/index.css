@@ -39,3 +39,7 @@ input {
     @apply z-1;
   }
 }
+
+.code-highlight {
+  @apply bg-yellow-200/60 text-black rounded px-0.5;
+}
