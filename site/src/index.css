@@ -1,9 +1,41 @@
 @import "tailwindcss";
 
 button {
-  @apply bg-gray-300 px-4 py-2 rounded-full border-2 border-gray-100;
+  @apply bg-white px-3 py-1 rounded-md border border-black/40 shadow-[0_6px_0_rgba(0,0,0,0.2)] transition-all;
+
+  &:hover {
+    @apply bg-white/50;
+  }
+
+  &:active {
+    @apply translate-y-[5px] shadow-[0_1px_0_rgba(0,0,0,0.1)];
+  }
+
+  &[aria-pressed="true"]:not(:active) {
+    @apply border-blue-500 shadow-blue-600/60 text-blue-600;
+  }
 }
 
 input {
   @apply bg-white px-3 py-2 rounded-lg;
+}
+
+.toolbar {
+  @apply flex gap-6 items-center border-b border-black/10 pb-5;
+}
+
+.button-group {
+  @apply flex;
+
+  & > button:first-child {
+    @apply rounded-r-none;
+  }
+
+  & > button + button {
+    @apply rounded-l-none -ml-px;
+  }
+
+  & > button[aria-pressed="true"] {
+    @apply z-1;
+  }
 }

@@ -1,29 +1,30 @@
-import { Counter } from "./counter";
-import { Expandable } from "./expandable";
-import { Toggle, ToggleState } from "./toggle";
-import { ScrollPositionView, ScrollView } from "./scroll-view";
-import { TodoList } from "./todo-list";
+import { Reader } from "./examples/reader";
+import { CodeExample } from "./code-example";
+import readerSource from "./examples/reader.tsx?raw";
 
 export function App() {
   return (
-    <div className="flex flex-col gap-8 p-8 max-w-xl mx-auto">
-      <div className="flex gap-8">
-        <Toggle />
-        <Toggle />
-      </div>
-      <Counter />
-      <div className="flex flex-col gap-8 p-8 border">
-        <ToggleState.Provider>
-          <Toggle />
-          <Counter initialCount={10} />
-        </ToggleState.Provider>
-      </div>
-      <TodoList />
-      <Expandable content="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." />
-      <ScrollView className="h-[200px] bg-white p-6">
-        <ScrollPositionView />
-        <div className="h-[1000px]">Hello</div>
-      </ScrollView>
+    <div className="flex flex-col gap-8 px-8 py-16 max-w-[800px] mx-auto justify-center">
+      <h1 className="text-6xl tracking-tighter font-medium">
+        pretty good state
+      </h1>
+      <code className="font-mono tracking-tight flex items-center gap-1.5">
+        npm install pretty-good-state
+        <div className="inline-block w-2 h-[1.2em] bg-black" />
+      </code>
+      <CodeExample source={readerSource}>
+        <Reader>
+          <div className="py-3">
+            <p className="mb-2">
+              The just-enough state management library for React.
+            </p>
+            <p>✅ Fine-grained reactivity</p>
+            <p>✅ Simple and intuitive mutations</p>
+            <p>✅ Unified API for local, global, and context state</p>
+            <p>✅ Full TypeScript support</p>
+          </div>
+        </Reader>
+      </CodeExample>
     </div>
   );
 }
