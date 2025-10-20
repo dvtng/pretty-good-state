@@ -21,7 +21,7 @@ input {
 }
 
 .toolbar {
-  @apply flex gap-6 items-center border-b border-black/10 pb-5;
+  @apply flex gap-6 items-center border-b border-black/10 pb-6;
 }
 
 .button-group {
