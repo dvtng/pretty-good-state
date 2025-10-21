@@ -16,6 +16,15 @@ test("PROXY_REFs are not enumerable", () => {
   expect(Object.keys(state)).toEqual(["a", "b", "c"]);
 });
 
+test("constructor makes deep copies of state objects", () => {
+  const State = defineState({ outer: { inner: { value: 0 } } });
+  const state1 = State();
+  const state2 = State();
+
+  state1.outer.inner.value = 1;
+  expect(state2.outer.inner.value).toBe(0);
+});
+
 test("replacing runInComponent functions in tests", () => {
   const AnalyticsContext = createContext({ track: (event: string) => {} });
   const State = defineState({
