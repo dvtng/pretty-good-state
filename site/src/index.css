@@ -40,7 +40,7 @@ a[href] {
 }
 
 .branding {
-  @apply bg-gradient-to-r from-purple-600 to-emerald-500 text-transparent bg-clip-text font-medium;
+  @apply bg-gradient-to-r from-purple-600 to-emerald-500 text-transparent bg-clip-text;
 }
 
 .toolbar {

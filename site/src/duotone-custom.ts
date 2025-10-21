@@ -3,7 +3,7 @@
 const BLUE_DARK = "#092B6E";
 const BLUE_MEDIUM = "#124EC5";
 const BLUE_LIGHT = "#5F8FEE";
-const GREEN = "#09A54C";
+const GREEN = "#03A94B";
 
 const style: { [key: string]: React.CSSProperties } = {
   'code[class*="language-"]': {
@@ -88,7 +88,6 @@ const style: { [key: string]: React.CSSProperties } = {
   },
   comment: {
     color: GREEN,
-    fontWeight: "bold",
   },
   prolog: {
     color: "#b6ad9a",
