@@ -5,6 +5,10 @@ import { PatternHighlight, PatternHighlighter } from "./pattern-highlighter";
 import duotoneCustom from "./duotone-custom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 
+export const HIGHLIGHT_EMERALD = "border-b-2 border-emerald-500 bg-emerald-50";
+
+export const HIGHLIGHT_PURPLE = "border-b-2 border-purple-400 bg-purple-50";
+
 export function CodeExample({
   source,
   children,

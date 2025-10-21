@@ -1,7 +1,11 @@
 import { LeafIcon } from "lucide-react";
 import { Benefits } from "./benefits";
 import { TypographyExample } from "./examples/typography-example";
-import { CodeExample } from "./code-example";
+import {
+  CodeExample,
+  HIGHLIGHT_EMERALD,
+  HIGHLIGHT_PURPLE,
+} from "./code-example";
 
 export function App() {
   return (
@@ -80,36 +84,32 @@ function CounterView() {
         shared counters.
       </p>
       <CodeExample
+        highlights={[
+          { pattern: /(state)/g, className: HIGHLIGHT_EMERALD },
+          { pattern: /(CountersState)/g, className: HIGHLIGHT_PURPLE },
+        ]}
         source={`
-// Shared collection of counters
 const CountersState = defineState({
-  counts: {} as Record<string, number>,
-  increment(id: string) {
-    if (this.counts[id] === undefined) {
-      this.counts[id] = 0;
-    }
-    this.counts[id]++;
-  }
+  counts: {
+    counterA: 0,
+    counterB: 0,
+    counterC: 0,
+  },
 });
 
-// Component that renders a single counter
 function CounterView({ id }: { id: string }) {
   const state = useProvidedState(CountersState);
   return (
     <div>
       {/* The below property access is tracked */}
-      <div>{state.counts[id] ?? 0}</div>
-      <button onClick={() => {
-        // Triggers a re-render of this CounterView component only
-        state.increment(id);
-      }}>
+      <div>{state.counts[id]}</div>
+      <button
+        onClick={() => {
+          // Triggers a re-render
+          state.counts[id]++;
+        }}
+      >
         Increment
-      </button>
-      <button onClick={() => {
-        // Triggers a re-render of all CounterView components
-        state.counts = {};
-      }}>
-        Reset all counters
       </button>
     </div>
   );

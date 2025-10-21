@@ -1,8 +1,6 @@
-import { CodeExample } from "../code-example";
+import { CodeExample, HIGHLIGHT_EMERALD } from "../code-example";
 import source from "./typography.tsx?raw";
 import { Typography } from "./typography";
-
-const highlightClass = "border-b-2 border-emerald-500 bg-emerald-50";
 
 export function TypographyExample() {
   return (
@@ -11,12 +9,12 @@ export function TypographyExample() {
       highlights={[
         {
           pattern: "TypographyState",
-          className: highlightClass,
+          className: HIGHLIGHT_EMERALD,
         },
-        { pattern: /\btypography\b/g, className: highlightClass },
+        { pattern: /\btypography\b/g, className: HIGHLIGHT_EMERALD },
         {
           pattern: /\b(size|family)\b/g,
-          className: highlightClass,
+          className: HIGHLIGHT_EMERALD,
         },
       ]}
     >
