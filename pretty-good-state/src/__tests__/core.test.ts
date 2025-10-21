@@ -17,12 +17,28 @@ test("PROXY_REFs are not enumerable", () => {
 });
 
 test("constructor makes deep copies of state objects", () => {
-  const State = defineState({ outer: { inner: { value: 0 } } });
+  const State = defineState({
+    outer: { inner: { value: 0 } },
+    array: [] as number[],
+    get value() {
+      return this.outer.inner.value;
+    },
+    get sortedArray() {
+      return this.array.sort((a, b) => a - b);
+    },
+  });
   const state1 = State();
   const state2 = State();
 
   state1.outer.inner.value = 1;
+  state1.array.push(2);
+  state1.array.push(1);
+  expect(state1.value).toBe(1);
+  expect(state1.sortedArray).toEqual([1, 2]);
+
   expect(state2.outer.inner.value).toBe(0);
+  expect(state2.value).toBe(0);
+  expect(state2.sortedArray).toEqual([]);
 });
 
 test("replacing runInComponent functions in tests", () => {
