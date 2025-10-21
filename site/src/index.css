@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+h2 {
+  @apply text-5xl tracking-tighter font-medium mt-8;
+}
+
+h3 {
+  @apply text-3xl tracking-tighter font-medium mt-2;
+  &::before {
+    content: "– ";
+  }
+}
+
+p {
+  @apply text-xl leading-relaxed;
+}
+
 button {
   @apply bg-white px-3 py-1 rounded-md border border-black/40 shadow-[0_6px_0_rgba(0,0,0,0.2)] transition-all;
 
@@ -20,8 +35,16 @@ input {
   @apply bg-white px-3 py-2 rounded-lg;
 }
 
+a[href] {
+  @apply text-blue-500 hover:text-blue-400;
+}
+
+.branding {
+  @apply bg-gradient-to-r from-purple-600 to-emerald-500 text-transparent bg-clip-text font-medium;
+}
+
 .toolbar {
-  @apply flex gap-6 items-center border-b border-black/10 pb-6;
+  @apply flex gap-6 items-center pt-2;
 }
 
 .button-group {

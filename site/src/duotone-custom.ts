@@ -23,7 +23,6 @@ const style: { [key: string]: React.CSSProperties } = {
     MozHyphens: "none",
     msHyphens: "none",
     hyphens: "none",
-    background: "#faf8f5",
     color: BLUE_DARK,
   },
   'pre[class*="language-"]': {
@@ -43,7 +42,6 @@ const style: { [key: string]: React.CSSProperties } = {
     MozHyphens: "none",
     msHyphens: "none",
     hyphens: "none",
-    background: "#faf8f5",
     color: BLUE_DARK,
     padding: "1em",
     margin: ".5em 0",

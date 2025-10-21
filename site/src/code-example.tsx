@@ -1,6 +1,9 @@
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import React from "react";
+import { defineState, useLocalState } from "pretty-good-state";
+import { CodeIcon } from "lucide-react";
+import { PatternHighlight, PatternHighlighter } from "./pattern-highlighter";
 import duotoneCustom from "./duotone-custom";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 
 export function CodeExample({
   source,
@@ -8,109 +11,82 @@ export function CodeExample({
   highlights,
 }: {
   source: string;
-  children: React.ReactNode;
-  highlights?: Array<{
-    pattern: RegExp | string;
-    className?: string;
-    style?: React.CSSProperties;
-  }>;
+  children?: React.ReactNode;
+  highlights?: Array<PatternHighlight>;
 }) {
-  const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const codeRef = React.useRef<HTMLDivElement | null>(null);
+  return (
+    <div className="flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.1)] bg-white -mx-6">
+      {children ? (
+        <>
+          <div className="p-6 border-b border-black/10">{children}</div>
+          <CodeExpander>
+            <CodeBlock source={source} language="tsx" highlights={highlights} />
+          </CodeExpander>
+        </>
+      ) : (
+        <CodeBlock source={source} language="tsx" highlights={highlights} />
+      )}
+    </div>
+  );
+}
 
-  React.useEffect(() => {
-    if (!codeRef.current || !highlights || highlights.length === 0) return;
+const CodeExpanderState = defineState({
+  isExpanded: false,
+  toggle() {
+    this.isExpanded = !this.isExpanded;
+  },
+});
 
-    const root = codeRef.current;
-
-    // Convert string patterns to global regexes and ensure global flag for regexes
-    const compiled = highlights.map((h) => {
-      if (typeof h.pattern === "string") {
-        const escaped = h.pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        return { ...h, pattern: new RegExp(escaped, "g") };
-      }
-      const flags = h.pattern.flags.includes("g")
-        ? h.pattern.flags
-        : h.pattern.flags + "g";
-      return { ...h, pattern: new RegExp(h.pattern.source, flags) };
-    });
-
-    // Walk only text nodes under the syntax highlighter content
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const textNodes: Text[] = [];
-    let current: Node | null = walker.nextNode();
-    while (current) {
-      const parentElement = current.parentElement;
-      if (
-        current.nodeType === Node.TEXT_NODE &&
-        parentElement &&
-        !parentElement.closest(".code-highlight") &&
-        current.textContent &&
-        current.textContent.trim() !== ""
-      ) {
-        textNodes.push(current as Text);
-      }
-      current = walker.nextNode();
-    }
-
-    for (const textNode of textNodes) {
-      let node: Node = textNode;
-      for (const h of compiled) {
-        const className = h.className ?? "code-highlight";
-        const style = h.style;
-        if (!(node instanceof Text)) break;
-        const content = node.textContent ?? "";
-        h.pattern.lastIndex = 0;
-        const matches = [...content.matchAll(h.pattern)];
-        if (matches.length === 0) continue;
-
-        const frag = document.createDocumentFragment();
-        let lastIndex = 0;
-        for (const m of matches) {
-          const start = m.index ?? 0;
-          const end = start + (m[0]?.length ?? 0);
-          if (start > lastIndex) {
-            frag.appendChild(
-              document.createTextNode(content.slice(lastIndex, start))
-            );
-          }
-          const span = document.createElement("span");
-          span.className = className;
-          if (style) Object.assign(span.style, style);
-          span.textContent = content.slice(start, end);
-          frag.appendChild(span);
-          lastIndex = end;
-        }
-        if (lastIndex < content.length) {
-          frag.appendChild(document.createTextNode(content.slice(lastIndex)));
-        }
-
-        // Replace the original text node with the fragment
-        node.parentNode?.replaceChild(frag, node);
-      }
-    }
-  }, [source, highlights]);
+function CodeExpander({ children }: { children: React.ReactNode }) {
+  const state = useLocalState(CodeExpanderState);
 
   return (
-    <div
-      ref={containerRef}
-      className="flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.1)]"
-    >
-      <div className="p-6 bg-white border-b border-black/10">{children}</div>
-
-      <div ref={codeRef}>
-        <SyntaxHighlighter
-          language="tsx"
-          style={duotoneCustom}
-          customStyle={{
-            padding: "1.5rem",
-            margin: 0,
-            borderRadius: 0,
-          }}
+    <div style={{ background: "#faf8f5" }}>
+      <div className="px-6 py-4">
+        <a
+          onClick={state.toggle}
+          className="cursor-pointer text-black/50 hover:text-black transition text-sm flex items-center gap-2"
         >
-          {source}
-        </SyntaxHighlighter>
+          <CodeIcon className="w-4 h-4" />
+          {state.isExpanded ? "Hide code" : "Show code"}
+        </a>
+      </div>
+      <div
+        className="grid transition-all duration-300 ease-in-out"
+        style={{
+          gridTemplateRows: state.isExpanded ? "1fr" : "0fr",
+        }}
+      >
+        <div className="overflow-hidden min-h-0">{children}</div>
       </div>
     </div>
+  );
+}
+
+function CodeBlock({
+  source,
+  language,
+  highlights,
+}: {
+  source: string;
+  language: string;
+  highlights?: Array<PatternHighlight>;
+}) {
+  // Trim empty lines from the start and end of the source
+  source = source.trim().replace(/^[\r\n]+|[\r\n]+$/g, "");
+  return (
+    <PatternHighlighter highlights={highlights} trigger={source}>
+      <SyntaxHighlighter
+        language={language}
+        style={duotoneCustom}
+        customStyle={{
+          padding: "1.5rem",
+          margin: 0,
+          borderRadius: 0,
+        }}
+      >
+        {source}
+      </SyntaxHighlighter>
+    </PatternHighlighter>
   );
 }
