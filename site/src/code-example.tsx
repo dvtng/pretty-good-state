@@ -5,9 +5,9 @@ import { PatternHighlight, PatternHighlighter } from "./pattern-highlighter";
 import duotoneCustom from "./duotone-custom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 
-export const HIGHLIGHT_EMERALD = "border-b-2 border-emerald-500 bg-emerald-50";
+export const HIGHLIGHT_EMERALD = "border-b border-emerald-500 bg-emerald-50";
 
-export const HIGHLIGHT_PURPLE = "border-b-2 border-purple-400 bg-purple-50";
+export const HIGHLIGHT_PURPLE = "border-b border-purple-400 bg-purple-50";
 
 export function CodeExample({
   source,
@@ -22,10 +22,10 @@ export function CodeExample({
     <div className="flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.1)] bg-white -mx-6">
       {children ? (
         <>
-          <div className="p-6 border-b border-black/10">{children}</div>
-          <CodeExpander>
-            <CodeBlock source={source} language="tsx" highlights={highlights} />
-          </CodeExpander>
+          <CodeBlock source={source} language="tsx" highlights={highlights} />
+          <div className="p-6 border-t border-black/10 bg-stone-50">
+            {children}
+          </div>
         </>
       ) : (
         <CodeBlock source={source} language="tsx" highlights={highlights} />

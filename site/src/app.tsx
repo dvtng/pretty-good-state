@@ -1,16 +1,11 @@
 import { LeafIcon } from "lucide-react";
 import { Benefits } from "./benefits";
 import { TypographyExample } from "./examples/typography-example";
+import { CodeExample } from "./code-example";
 import {
-  CodeExample,
-  HIGHLIGHT_EMERALD,
-  HIGHLIGHT_PURPLE,
-} from "./code-example";
-
-const COUNTER_STATE_HIGHLIGHTS = [
-  { pattern: /\bCounter(s?)State\b/g, className: HIGHLIGHT_PURPLE },
-  { pattern: /\bcounter(s?)\b/g, className: HIGHLIGHT_EMERALD },
-];
+  COUNTER_STATE_HIGHLIGHTS,
+  CountersExample,
+} from "./examples/counters-example";
 
 export function App() {
   return (
@@ -48,24 +43,35 @@ const CounterState = defineState({
       />
       <p>
         Unlike React's built-in state, this definition lives outside of your
-        components. We can create instances of it – as local state in a
-        component...
+        components. To use it, we can create an <i>instance</i> as local state
+        in a component.
       </p>
       <CodeExample
         highlights={COUNTER_STATE_HIGHLIGHTS}
         source={`
-const counter = useLocalState(CounterState);
+function CounterView() {
+  // Each CounterView gets its own copy of the state
+  const counter = useLocalState(CounterState);
+  return <div>{counter.count}</div>;
+}
       `}
       />
-      <p>...or as context for a portion of your component tree.</p>
+      <p>
+        Or, we can create a shared instance as context for a portion of your
+        component tree.
+      </p>
       <CodeExample
         highlights={COUNTER_STATE_HIGHLIGHTS}
         source={`
-<CounterState.Provider>
-  {/* The following components will share the same state */}
-  <CounterView />
-  <CounterView />
-</CounterState.Provider>
+function App() {
+  return (
+    <CounterState.Provider>
+      {/* The following components will share the same state */}
+      <CounterView />
+      <CounterView />
+    </CounterState.Provider>
+  );
+}
 
 function CounterView() {
   // Note the use of useProvidedState instead of useLocalState
@@ -96,13 +102,13 @@ function CounterView() {
         source={`
 const CountersState = defineState({
   counts: {
-    counterA: 0,
-    counterB: 0,
-    counterC: 0,
+    a: 0,
+    b: 0,
+    c: 0,
   },
 });
 
-function CounterView({ id }: { id: string }) {
+function CounterView({ id }: { id: "a" | "b" | "c" }) {
   const counters = useProvidedState(CountersState);
   return (
     <div>
@@ -134,40 +140,7 @@ function CounterView({ id }: { id: string }) {
         Here's an example of how we could take advantage of this combined,
         shared state:
       </p>
-      <CodeExample
-        highlights={COUNTER_STATE_HIGHLIGHTS}
-        source={`
-function Counters() {
-  const counters = useLocalState(CountersState);
-  return (
-    <CountersState.Provider state={counters}>
-      <CounterView id="counterA" />
-      <CounterView id="counterB" />
-      <CounterView id="counterC" />
-      <TotalCount />
-      <button
-        onClick={() => {
-          // Triggers a re-render for all CounterView components
-          counters.counts = {
-            counterA: 0,
-            counterB: 0,
-            counterC: 0,
-          };
-        }}
-      >
-        Reset all
-      </button>
-    </CountersState.Provider>
-  );
-}
-
-function TotalCount() {
-  const counters = useProvidedState(CountersState);
-  const total = Object.values(counters.counts).reduce((sum, count) => sum + count);
-  return <div>Total: {total}</div>;
-}
-`}
-      />
+      <CountersExample />
       <p>
         Under the hood, <span className="branding">pretty good state</span> uses
         a{" "}

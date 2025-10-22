@@ -3,7 +3,7 @@
 const BLUE_DARK = "#092B6E";
 const BLUE_MEDIUM = "#124EC5";
 const BLUE_LIGHT = "#5F8FEE";
-const GREEN = "#03A94B";
+const GREEN = "#4CA76A";
 
 const style: { [key: string]: React.CSSProperties } = {
   'code[class*="language-"]': {
