@@ -1,7 +1,7 @@
 import { createContext, useContext, useLayoutEffect, useRef } from "react";
 import { useSnapshot, type Snapshot } from "valtio";
 import { unstable_deepProxy } from "valtio/utils";
-import { patchValtio, $ } from "./patch-valtio";
+import { patchValtio, $ } from "./patch-valtio.js";
 
 patchValtio();
 

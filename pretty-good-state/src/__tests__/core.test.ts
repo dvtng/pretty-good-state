@@ -1,5 +1,5 @@
 import { expect, test, mock } from "bun:test";
-import { defineState, runInComponent } from "../core";
+import { defineState, runInComponent } from "../core.js";
 import { createContext, useContext } from "react";
 
 test("PROXY_REFs are not enumerable", () => {

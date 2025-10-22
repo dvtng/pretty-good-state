@@ -1,5 +1,5 @@
 import { unstable_replaceInternalFunction } from "valtio";
-import { isRunInComponent } from "./core";
+import { isRunInComponent } from "./core.js";
 
 const PROXY_REF = Symbol("$");
 
