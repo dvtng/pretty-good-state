@@ -1,6 +1,12 @@
 import { expect, test, mock } from "bun:test";
-import { defineState, runInComponent } from "../core.js";
+import {
+  defineState,
+  runInComponent,
+  useLocalState,
+  type Infer,
+} from "../core.js";
 import { createContext, useContext } from "react";
+import { render } from "@testing-library/react";
 
 test("PROXY_REFs are not enumerable", () => {
   const State = defineState({} as Record<string, number>);
@@ -61,4 +67,37 @@ test("replacing runInComponent functions in tests", () => {
 
   state.submit();
   expect(trackMock).toHaveBeenCalledWith("submit");
+});
+
+test("runInComponent has access to `this`", () => {
+  const trackMock = mock((source: string, event: string) => {});
+  const AnalyticsContext = createContext({
+    track: trackMock,
+  });
+
+  const State = defineState({
+    id: "abc",
+    getAnalytics: runInComponent(function (this: Infer<typeof State>) {
+      const analytics = useContext(AnalyticsContext);
+      return {
+        track: (event: string) => {
+          analytics.track(this.id, event);
+        },
+      };
+    }),
+    submit() {
+      this.getAnalytics().track("submit");
+    },
+  });
+
+  function TestComponent() {
+    const state = useLocalState(State);
+    // Call submit when component renders
+    state.submit();
+    return null;
+  }
+
+  render(<TestComponent />);
+
+  expect(trackMock).toHaveBeenCalledWith("abc", "submit");
 });

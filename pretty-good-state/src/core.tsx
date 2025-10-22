@@ -48,11 +48,11 @@ export function defineState<T extends object>(
 ): StateConstructor<T>;
 
 export function defineState<T extends object>(
-  initialValue: T
+  initialValue: T & ThisType<T>
 ): StateConstructor<T>;
 
 export function defineState<T extends object>(
-  initialValue: T | (() => T)
+  initialValue: (T & ThisType<T>) | (() => T)
 ): StateConstructor<T> {
   const constructor = function (setInitialValue?: StateSetter<T>) {
     const state = unstable_deepProxy(
@@ -226,7 +226,7 @@ export function usePassedState<T extends object>(
   return makeProxy(proxy, snapshot);
 }
 
-export function runInComponent<T>(fn: () => T): () => T {
+export function runInComponent<T extends AnyFunction>(fn: T): T {
   Object.defineProperty(fn, INJECTABLE_FN, { value: true });
   return fn;
 }
