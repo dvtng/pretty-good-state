@@ -94,10 +94,11 @@ test("runInComponent has access to `this`", () => {
     const state = useLocalState(State);
     // Call submit when component renders
     state.submit();
-    return null;
+    return <div>{state.id}</div>;
   }
 
-  render(<TestComponent />);
+  const { getByText } = render(<TestComponent />);
 
   expect(trackMock).toHaveBeenCalledWith("abc", "submit");
+  expect(getByText("abc")).toBeDefined();
 });
