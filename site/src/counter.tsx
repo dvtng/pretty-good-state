@@ -1,6 +1,5 @@
 import {
   defineState,
-  runInComponent,
   useLocalState,
   useProvidedState,
 } from "pretty-good-state";
@@ -9,17 +8,17 @@ import { ToggleState } from "./toggle";
 export const CounterState = defineState({
   count: 0,
   increment() {
-    if (this.getIsDisabled()) return;
+    if (this.useIsDisabled()) return;
     this.count++;
   },
   decrement() {
-    if (this.getIsDisabled()) return;
+    if (this.useIsDisabled()) return;
     if (this.count === 0) return;
     this.count--;
   },
-  getIsDisabled: runInComponent(() => {
+  useIsDisabled() {
     return useProvidedState(ToggleState).isOff;
-  }),
+  },
 });
 
 export function Counter({ initialCount = 0 }: { initialCount?: number }) {
@@ -32,7 +31,7 @@ export function Counter({ initialCount = 0 }: { initialCount?: number }) {
       <div
         className="flex items-center gap-2"
         style={{
-          opacity: state.getIsDisabled() ? 0.5 : 1,
+          opacity: state.useIsDisabled() ? 0.5 : 1,
         }}
       >
         <button onClick={state.decrement}>-</button>
@@ -40,7 +39,7 @@ export function Counter({ initialCount = 0 }: { initialCount?: number }) {
         <button onClick={state.increment}>+</button>
         <button
           onClick={() => {
-            if (state.getIsDisabled()) return;
+            if (state.useIsDisabled()) return;
             state.count = initialCount;
           }}
         >
