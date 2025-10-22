@@ -1,7 +1,12 @@
 import { expect, test, mock } from "bun:test";
-import { defineState, useLocalState } from "../core.js";
+import {
+  defineState,
+  globalStore,
+  useLocalState,
+  useProvidedState,
+} from "../core.js";
 import { createContext, useContext, useLayoutEffect } from "react";
-import { render } from "@testing-library/react";
+import { act, getByText, render } from "@testing-library/react";
 
 test("PROXY_REFs are not enumerable", () => {
   const State = defineState({} as Record<string, number>);
@@ -70,13 +75,13 @@ test("hooks have access to `this`", () => {
     useLayoutEffect(() => {
       state.track("render");
     }, []);
-    return <div>{state.id}</div>;
+    return <div data-testid="result">{state.id}</div>;
   }
 
-  const { getByText } = render(<TestComponent />);
+  const { getByTestId } = render(<TestComponent />);
 
   expect(trackMock).toHaveBeenCalledWith("abc", "render");
-  expect(getByText("abc")).toBeDefined();
+  expect(getByTestId("result").textContent).toBe("abc");
 });
 
 test("hooks can be overridden in tests", () => {
@@ -99,4 +104,74 @@ test("hooks can be overridden in tests", () => {
 
   state.submit();
   expect(trackMock).toHaveBeenCalledWith("submit");
+});
+
+test("components that don't access state properties do not re-render", () => {
+  const State = defineState({
+    count: 0,
+    increment() {
+      this.count++;
+    },
+  });
+
+  const countRenderMock = mock(() => {});
+  const incrementRenderMock = mock(() => {});
+
+  function Count() {
+    const state = useProvidedState(State, { sync: true });
+    countRenderMock();
+    return <div>{state.count}</div>;
+  }
+
+  function Increment() {
+    const state = useProvidedState(State, { sync: true });
+    incrementRenderMock();
+    return <button onClick={state.increment}>Increment</button>;
+  }
+
+  const { getByText } = render(
+    <>
+      <Count />
+      <Increment />
+    </>
+  );
+
+  expect(countRenderMock).toHaveBeenCalledTimes(1);
+  expect(incrementRenderMock).toHaveBeenCalledTimes(1);
+
+  act(() => {
+    getByText("Increment").click();
+  });
+
+  expect(countRenderMock).toHaveBeenCalledTimes(2);
+  expect(incrementRenderMock).toHaveBeenCalledTimes(1);
+});
+
+test("dependencies in functions are still tracked", () => {
+  const State = defineState({
+    count: 0,
+    isModulo(modulo: number) {
+      return this.count % modulo === 0;
+    },
+    increment() {
+      this.count++;
+    },
+  });
+
+  function TestComponent() {
+    const state = useLocalState(State, { sync: true });
+    return (
+      <>
+        <div data-testid="result">{state.isModulo(2) ? "even" : "odd"}</div>
+        <button onClick={state.increment}>Increment</button>
+      </>
+    );
+  }
+
+  const { getByTestId, getByText } = render(<TestComponent />);
+  expect(getByTestId("result").textContent).toBe("even");
+  act(() => {
+    getByText("Increment").click();
+  });
+  expect(getByTestId("result").textContent).toBe("odd");
 });

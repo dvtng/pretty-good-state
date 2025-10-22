@@ -215,13 +215,15 @@ export function usePassedState<T extends object>(
       get(target, prop, receiver) {
         const value = Reflect.get(target, prop, receiver);
         if (!isRendering) {
-          return value;
+          return typeof value === "function" ? value.bind(receiver) : value;
         }
         const snapshotValue = (snapshot as any)[prop];
         if (typeof value === "object" && value !== null) {
           return makeProxy(value, snapshotValue);
         }
-        return snapshotValue;
+        return typeof snapshotValue === "function"
+          ? snapshotValue.bind(receiver)
+          : snapshotValue;
       },
     });
   }
