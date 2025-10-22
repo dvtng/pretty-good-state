@@ -1,6 +1,6 @@
 import { unstable_replaceInternalFunction } from "valtio";
 
-const PROXY_REF = Symbol("$");
+export const PROXY_REF = Symbol("$");
 
 export function $<T extends object>(state: T): T {
   return (state as any)[PROXY_REF]();
