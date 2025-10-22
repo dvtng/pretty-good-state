@@ -1,6 +1,5 @@
 import { LeafIcon } from "lucide-react";
 import { Benefits } from "./benefits";
-import { TypographyExample } from "./examples/typography-example";
 import { CodeExample } from "./code-example";
 import {
   COUNTER_STATE_HIGHLIGHTS,
@@ -137,8 +136,8 @@ function CounterView({ id }: { id: "a" | "b" | "c" }) {
         our components will needlessly re-render.
       </p>
       <p>
-        Here's an example of how we could take advantage of this combined,
-        shared state:
+        Here's an example of how we can take advantage of this combined, shared
+        state:
       </p>
       <CountersExample />
       <p>
@@ -156,10 +155,35 @@ function CounterView({ id }: { id: "a" | "b" | "c" }) {
         during rendering (i.e. in the main component body), so that properties
         used only in callbacks or useEffects are not tracked.
       </p>
-      <h2>examples</h2>
-      <div className="mt-4">
-        <TypographyExample />
-      </div>
+      <h2>complex states</h2>
+      <h3>functions</h3>
+      <p>
+        Functions defined on the state are automatically bound to the state
+        instance, and can freely use <code>this</code> to get or set other
+        properties of the state.
+      </p>
+      <CodeExample
+        highlights={COUNTER_STATE_HIGHLIGHTS}
+        source={`
+const CounterState = defineState({
+  count: 0,
+  increment() {
+    this.count++;
+  },
+});
+
+function CounterView() {
+  const counter = useLocalState(CounterState);
+  return <button onClick={counter.increment}>+</button>;
+}
+`}
+      />
+      <h3>refs</h3>
+      <p>Todo</p>
+      <h3>hooks</h3>
+      <p>Todo</p>
+      <h3>sub-states</h3>
+      <p>Todo</p>
     </div>
   );
 }

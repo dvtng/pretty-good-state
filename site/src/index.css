@@ -6,9 +6,6 @@ h2 {
 
 h3 {
   @apply text-3xl tracking-tighter font-medium mt-2;
-  &::before {
-    content: "– ";
-  }
 }
 
 p {
@@ -65,4 +62,8 @@ a[href] {
 
 .code-highlight {
   @apply bg-yellow-200/60 text-black rounded px-0.5;
+}
+
+:not(pre) > code {
+  @apply bg-black/5 px-2 text-black/50;
 }
