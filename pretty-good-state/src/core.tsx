@@ -24,14 +24,14 @@ export type StateSetter<T extends object> = (state: T) => void;
 
 export type SnapshotOptions = { sync?: boolean };
 
-const INJECTABLE_FN = Symbol("INJECTABLE_FN");
+const HOOK_KEY_REGEX = /^use[^a-z]/;
 const NOT_INJECTED = Symbol("NOT_INJECTED");
 
 const meta = new WeakMap<
   object,
   {
     constructor: StateConstructor<any>;
-    injectables: { fn: Function; result: unknown }[];
+    hooks: { fn: Function; result: unknown }[];
   }
 >();
 
@@ -48,43 +48,46 @@ export function defineState<T extends object>(
 ): StateConstructor<T>;
 
 export function defineState<T extends object>(
-  initialValue: T & ThisType<T>
+  initialValue: T
 ): StateConstructor<T>;
 
 export function defineState<T extends object>(
-  initialValue: (T & ThisType<T>) | (() => T)
+  initialValue: T | (() => T)
 ): StateConstructor<T> {
   const constructor = function (setInitialValue?: StateSetter<T>) {
     const state = unstable_deepProxy(
       typeof initialValue === "function" ? initialValue() : initialValue
     );
 
-    setInitialValue?.(state);
+    const hooks: { fn: Function; result: unknown }[] = [];
 
-    const injectables: { fn: Function; result: unknown }[] = [];
+    meta.set(state, { constructor, hooks });
 
-    meta.set(state, { constructor, injectables });
-
-    // Bind runInComponent functions
+    // Bind hook functions
     Object.getOwnPropertyNames(state).forEach((_key) => {
       const key = _key as keyof T;
-      if (typeof state[key] === "function" && INJECTABLE_FN in state[key]) {
-        let index = injectables.length;
-        injectables.push({
+      if (
+        typeof state[key] === "function" &&
+        state[key].length === 0 &&
+        typeof key === "string" &&
+        HOOK_KEY_REGEX.test(key)
+      ) {
+        let index = hooks.length;
+        hooks.push({
           fn: state[key].bind(state),
           result: NOT_INJECTED,
         });
         state[key] = (() => {
-          const result = injectables[index].result;
+          const result = hooks[index].result;
           if (result === NOT_INJECTED) {
-            throw new Error(
-              "Result of the runInComponent function has not been injected yet."
-            );
+            throw new Error("Result of the hook has not been injected yet.");
           }
           return result;
-        }) as T[keyof T];
+        }) as T[keyof T & string];
       }
     });
+
+    setInitialValue?.(state);
 
     return state;
   } as StateConstructor<T>;
@@ -128,8 +131,8 @@ export function useLocalState<T extends object>(
     state.current = constructor(setInitialValue);
   }
 
-  getMeta(state.current).injectables.forEach((injectable) => {
-    injectable.result = injectable.fn();
+  getMeta(state.current).hooks.forEach((hook) => {
+    hook.result = hook.fn();
   });
 
   const snapshotOptions = typeof options === "function" ? undefined : options;
@@ -225,31 +228,3 @@ export function usePassedState<T extends object>(
 
   return makeProxy(proxy, snapshot);
 }
-
-export function runInComponent<T extends AnyFunction>(fn: T): T {
-  Object.defineProperty(fn, INJECTABLE_FN, { value: true });
-  return fn;
-}
-
-export function isRunInComponent(value: unknown): boolean {
-  return typeof value === "function" && INJECTABLE_FN in value;
-}
-
-/** Function type for any kind of function */
-type AnyFunction = (...args: any[]) => any;
-
-/** JavaScript primitive types */
-type Primitive = string | number | boolean | null | undefined | symbol | bigint;
-
-/** Types that should not be proxied */
-type Ignored =
-  | Date
-  | Map<any, any>
-  | Set<any>
-  | WeakMap<any, any>
-  | WeakSet<any>
-  | Error
-  | RegExp
-  | AnyFunction
-  | Primitive
-  | { $$valtioSnapshot: any };

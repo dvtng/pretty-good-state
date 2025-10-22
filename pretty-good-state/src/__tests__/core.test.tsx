@@ -1,11 +1,6 @@
 import { expect, test, mock } from "bun:test";
-import {
-  defineState,
-  runInComponent,
-  useLocalState,
-  type Infer,
-} from "../core.js";
-import { createContext, useContext } from "react";
+import { defineState, useLocalState } from "../core.js";
+import { createContext, useContext, useLayoutEffect } from "react";
 import { render } from "@testing-library/react";
 
 test("PROXY_REFs are not enumerable", () => {
@@ -47,58 +42,61 @@ test("constructor makes deep copies of state objects", () => {
   expect(state2.sortedArray).toEqual([]);
 });
 
-test("replacing runInComponent functions in tests", () => {
-  const AnalyticsContext = createContext({ track: (event: string) => {} });
-  const State = defineState({
-    getAnalytics: runInComponent(() => {
-      return useContext(AnalyticsContext);
-    }),
-    submit() {
-      this.getAnalytics().track("submit");
-    },
-  });
-
-  const trackMock = mock(() => {});
-  const state = State((state) => {
-    state.getAnalytics = () => {
-      return { track: trackMock };
-    };
-  });
-
-  state.submit();
-  expect(trackMock).toHaveBeenCalledWith("submit");
-});
-
-test("runInComponent has access to `this`", () => {
+test("hooks have access to `this`", () => {
   const trackMock = mock((source: string, event: string) => {});
   const AnalyticsContext = createContext({
     track: trackMock,
   });
 
   const State = defineState({
-    id: "abc",
-    getAnalytics: runInComponent(function (this: Infer<typeof State>) {
+    id: "",
+    useAnalytics() {
       const analytics = useContext(AnalyticsContext);
       return {
         track: (event: string) => {
           analytics.track(this.id, event);
         },
       };
-    }),
-    submit() {
-      this.getAnalytics().track("submit");
+    },
+    track(event: string) {
+      this.useAnalytics().track(event);
     },
   });
 
   function TestComponent() {
-    const state = useLocalState(State);
-    // Call submit when component renders
-    state.submit();
+    const state = useLocalState(State, (state) => {
+      state.id = "abc";
+    });
+    useLayoutEffect(() => {
+      state.track("render");
+    }, []);
     return <div>{state.id}</div>;
   }
 
   const { getByText } = render(<TestComponent />);
 
-  expect(trackMock).toHaveBeenCalledWith("abc", "submit");
+  expect(trackMock).toHaveBeenCalledWith("abc", "render");
   expect(getByText("abc")).toBeDefined();
+});
+
+test("hooks can be overridden in tests", () => {
+  const AnalyticsContext = createContext({ track: (event: string) => {} });
+  const State = defineState({
+    useAnalytics() {
+      return useContext(AnalyticsContext);
+    },
+    submit() {
+      this.useAnalytics().track("submit");
+    },
+  });
+
+  const trackMock = mock(() => {});
+  const state = State((state) => {
+    state.useAnalytics = () => {
+      return { track: trackMock };
+    };
+  });
+
+  state.submit();
+  expect(trackMock).toHaveBeenCalledWith("submit");
 });
