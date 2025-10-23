@@ -1,5 +1,5 @@
 import { createContext, useContext, useLayoutEffect, useRef } from "react";
-import { useSnapshot, type Snapshot } from "valtio";
+import { useSnapshot, type Snapshot, ref as valtioRef } from "valtio";
 import { unstable_deepProxy } from "valtio/utils";
 import { patchValtio, $, PROXY_REF } from "./patch-valtio.js";
 
@@ -228,4 +228,13 @@ export function usePassedState<T extends object>(
   }
 
   return makeProxy(proxy, snapshot);
+}
+
+export function ref<T>(
+  value: T
+): T extends object ? T & { $$valtioSnapshot: T } : T {
+  if (typeof value !== "object" || value === null) {
+    return value as any;
+  }
+  return valtioRef(value) as any;
 }

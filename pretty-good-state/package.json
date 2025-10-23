@@ -20,8 +20,9 @@
     "dist/"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json",
-    "prepublishOnly": "bun test && bun run build"
+    "clean": "rm -rf dist",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "bun test && bun run clean && bun run build"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^17.1.0",
