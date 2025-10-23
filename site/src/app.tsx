@@ -181,7 +181,46 @@ function CounterView() {
       <h3>refs</h3>
       <p>Todo</p>
       <h3>hooks</h3>
-      <p>Todo</p>
+      <p>
+        <span className="branding">Pretty good state</span> will detect
+        functions that start with <code>use</code> and run them in the component
+        where the state is created (e.g. where <code>useLocalState()</code> is
+        called, or when a <code>Provider</code> is rendered). This allows them
+        to call React hooks, giving us a simple way to integrate with other
+        hook-based code.
+      </p>
+      <CodeExample
+        highlights={COUNTER_STATE_HIGHLIGHTS}
+        source={`
+const CounterState = defineState({
+  useLogger() {
+    return useContext(LoggerContext);
+  },
+  count: 0,
+  increment() {
+    this.count++;
+    this.useLogger().log("increment");
+  },
+});
+`}
+      />
+      <p>Some caveats to be aware of:</p>
+      <ul>
+        <li>
+          The{" "}
+          <a
+            href="https://react.dev/warnings/invalid-hook-call-warning"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            rules of hooks
+          </a>{" "}
+          apply to your state hooks, but the library takes care of running them
+          in the body of a function component.
+        </li>
+        <li>State hooks must be on the root of the state.</li>
+        <li>State hooks prevent a state from being used as global state.</li>
+      </ul>
       <h3>sub-states</h3>
       <p>Todo</p>
     </div>
