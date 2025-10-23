@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+* {
+  @apply overscroll-contain border-black/10 outline-black/10;
+}
+
 h2 {
   @apply text-5xl tracking-tighter font-medium mt-8;
 }

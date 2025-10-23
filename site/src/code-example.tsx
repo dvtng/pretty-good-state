@@ -23,7 +23,8 @@ export function CodeExample({
       {children ? (
         <>
           <CodeBlock source={source} language="tsx" highlights={highlights} />
-          <div className="p-6 border-t border-black/10 bg-stone-50">
+          <div className="flex flex-col gap-4 p-6 border-t border-black/10 bg-stone-50">
+            <div className="text-sm uppercase text-black/30 -mt-1">Output</div>
             {children}
           </div>
         </>

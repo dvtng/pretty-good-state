@@ -22,9 +22,8 @@ const CounterState = defineState({
       `}
       />
       <p>
-        Unlike React's built-in state, this definition lives outside of your
-        components. To use it, we can create an <i>instance</i> as local state
-        in a component.
+        To use it, we can create an <i>instance</i> as local state in a
+        component.
       </p>
       <CodeExample
         highlights={COUNTER_STATE_HIGHLIGHTS}

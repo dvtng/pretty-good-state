@@ -4,6 +4,8 @@ import {
   HIGHLIGHT_PURPLE,
 } from "./code-example";
 import { COUNTER_STATE_HIGHLIGHTS } from "./examples/counters-example";
+import { ScrollView } from "./examples/scroll-view-example";
+import scrollViewSource from "./examples/scroll-view-example.tsx?raw";
 
 export function ComplexStatesSection() {
   return (
@@ -85,18 +87,10 @@ const CounterState = defineState({
           { pattern: /\bScrollState\b/g, className: HIGHLIGHT_PURPLE },
           { pattern: /\bscrollState\b/g, className: HIGHLIGHT_EMERALD },
         ]}
-        source={`
-const ScrollState = defineState({
-  el: ref<Element | void>(),
-});
-
-function ScrollView({ children }: { children: React.ReactNode }) {
-  const scrollState = useLocalState(ScrollState);
-  return <div ref={el => scrollState.el = ref(el)}>{children}</div>;
-}
-`}
-      />
-
+        source={scrollViewSource}
+      >
+        <ScrollView />
+      </CodeExample>
       <h3>sub-states</h3>
       <p>Todo</p>
     </>
