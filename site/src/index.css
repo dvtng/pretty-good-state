@@ -14,7 +14,7 @@ li {
 }
 
 li {
-  @apply list-disc list-inside;
+  @apply list-disc list-outside ml-8;
 }
 
 button {

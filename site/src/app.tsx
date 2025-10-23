@@ -1,6 +1,10 @@
 import { LeafIcon } from "lucide-react";
 import { Benefits } from "./benefits";
-import { CodeExample } from "./code-example";
+import {
+  CodeExample,
+  HIGHLIGHT_EMERALD,
+  HIGHLIGHT_PURPLE,
+} from "./code-example";
 import {
   COUNTER_STATE_HIGHLIGHTS,
   CountersExample,
@@ -26,6 +30,7 @@ export function App() {
         .
       </p>
       <Benefits />
+
       <h2>getting started</h2>
       <h3>using state</h3>
       <p>
@@ -85,6 +90,7 @@ function CounterView() {
         <span className="branding">pretty good state</span> makes it easy to
         support any kind of application architecture.
       </p>
+
       <h3>tracking changes</h3>
       <p>
         Here's where the magic happens. Any time you access a state property
@@ -155,12 +161,12 @@ function CounterView({ id }: { id: "a" | "b" | "c" }) {
         during rendering (i.e. in the main component body), so that properties
         used only in callbacks or useEffects are not tracked.
       </p>
+
       <h2>complex states</h2>
       <h3>functions</h3>
       <p>
-        Functions defined on the state are automatically bound to the state
-        instance, and can freely use <code>this</code> to get or set other
-        properties of the state.
+        Functions are automatically bound to the state instance, and can freely
+        use <code>this</code> to get or set other properties of the state.
       </p>
       <CodeExample
         highlights={COUNTER_STATE_HIGHLIGHTS}
@@ -178,21 +184,20 @@ function CounterView() {
 }
 `}
       />
-      <h3>refs</h3>
-      <p>Todo</p>
+
       <h3>hooks</h3>
       <p>
-        <span className="branding">Pretty good state</span> will detect
-        functions that start with <code>use</code> and run them in the component
-        where the state is created (e.g. where <code>useLocalState()</code> is
-        called, or when a <code>Provider</code> is rendered). This allows them
-        to call React hooks, giving us a simple way to integrate with other
-        hook-based code.
+        Functions whose names start with <code>use</code> are <i>state hooks</i>
+        . They are automatically run in the component where the state is
+        instantiated (e.g. in a <code>useLocalState()</code> or a{" "}
+        <code>Provider</code>). This allows them to call React hooks, giving us
+        a simple way to integrate with other hook-based code.
       </p>
       <CodeExample
         highlights={COUNTER_STATE_HIGHLIGHTS}
         source={`
 const CounterState = defineState({
+  // This is a state hook, and it can call React hooks.
   useLogger() {
     return useContext(LoggerContext);
   },
@@ -207,20 +212,45 @@ const CounterState = defineState({
       <p>Some caveats to be aware of:</p>
       <ul>
         <li>
-          The{" "}
-          <a
-            href="https://react.dev/warnings/invalid-hook-call-warning"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            rules of hooks
-          </a>{" "}
-          apply to your state hooks, but the library takes care of running them
-          in the body of a function component.
+          State hooks can call any number of React hooks, but just as in a
+          regular component, React hooks cannot be called conditionally or
+          inside loops.
         </li>
-        <li>State hooks must be on the root of the state.</li>
-        <li>State hooks prevent a state from being used as global state.</li>
+        <li>
+          State hooks are run once on every render, and their return values are
+          cached. This means that state hooks <strong>can</strong> be called
+          conditionally, inside loops, or in a callback.
+        </li>
+        <li>State hooks can't be defined in nested objects.</li>
+        <li>
+          Since React hooks must be called in the body of a component, state
+          hooks cannot be used in global state.
+        </li>
       </ul>
+
+      <h3>refs</h3>
+      <p>
+        Some state values – such as DOM nodes – shouldn't be tracked by the
+        library. Use the <code>ref()</code> function to disable tracking for a
+        particular value.
+      </p>
+      <CodeExample
+        highlights={[
+          { pattern: /\bScrollState\b/g, className: HIGHLIGHT_PURPLE },
+          { pattern: /\bscrollState\b/g, className: HIGHLIGHT_EMERALD },
+        ]}
+        source={`
+const ScrollState = defineState({
+  el: ref<Element | void>(),
+});
+
+function ScrollView({ children }: { children: React.ReactNode }) {
+  const scrollState = useLocalState(ScrollState);
+  return <div ref={el => scrollState.el = ref(el)}>{children}</div>;
+}
+`}
+      />
+
       <h3>sub-states</h3>
       <p>Todo</p>
     </div>
