@@ -1,5 +1,10 @@
 import { expect, test, mock } from "bun:test";
-import { defineState, useLocalState, useProvidedState } from "../core.js";
+import {
+  defineState,
+  globalStore,
+  useLocalState,
+  useProvidedState,
+} from "../core.js";
 import { createContext, useContext, useLayoutEffect } from "react";
 import { act, render } from "@testing-library/react";
 
@@ -169,4 +174,21 @@ test("dependencies in functions are still tracked", () => {
     getByText("Increment").click();
   });
   expect(getByTestId("result").textContent).toBe("odd");
+});
+
+test("arrays mutations are reactive", () => {
+  const State = defineState({
+    array: [2, 1, 3],
+  });
+
+  function TestComponent() {
+    const state = useProvidedState(State, { sync: true });
+    return <div data-testid="result">{state.array.join(", ")}</div>;
+  }
+
+  const { getByTestId } = render(<TestComponent />);
+  act(() => {
+    globalStore.getState(State).array.sort((a, b) => a - b);
+  });
+  expect(getByTestId("result").textContent).toBe("1, 2, 3");
 });

@@ -91,8 +91,12 @@ const CounterState = defineState({
       >
         <ScrollView />
       </CodeExample>
-      <h3>sub-states</h3>
-      <p>Todo</p>
+      <h3>arrays</h3>
+      <p>
+        Arrays are fully supported, including the various mutation methods such
+        as <code>push()</code>, <code>pop()</code>, <code>shift()</code>,{" "}
+        <code>unshift()</code>, <code>splice()</code>, and <code>sort()</code>.
+      </p>
     </>
   );
 }
