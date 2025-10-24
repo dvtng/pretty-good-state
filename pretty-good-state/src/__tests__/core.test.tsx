@@ -1,14 +1,9 @@
 import { expect, test, mock } from "bun:test";
-import {
-  defineState,
-  globalStore,
-  useLocalState,
-  useProvidedState,
-} from "../core.js";
+import { defineState, useLocalState, useProvidedState } from "../core.js";
 import { createContext, useContext, useLayoutEffect } from "react";
-import { act, getByText, render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 
-test("PROXY_REFs are not enumerable", () => {
+test("PGS property is not enumerable", () => {
   const State = defineState({} as Record<string, number>);
 
   const state = State((state) => {
