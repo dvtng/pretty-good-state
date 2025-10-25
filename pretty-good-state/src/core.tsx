@@ -1,7 +1,7 @@
 import { createContext, useContext, useLayoutEffect, useRef } from "react";
 import { useSnapshot, type Snapshot, ref as valtioRef } from "valtio";
 import { unstable_deepProxy } from "valtio/utils";
-import { patchValtio, PGS } from "./patch-valtio.js";
+import { getPGS, patchValtio, PGS } from "./patch-valtio.js";
 
 patchValtio();
 
@@ -214,6 +214,9 @@ export function usePassedState<T extends object>(
     return new Proxy(proxy, {
       get(target, prop, receiver) {
         const value = Reflect.get(target, prop, receiver);
+        if (prop === PGS) {
+          return value;
+        }
         const needsBinding = typeof value === "function" && prop !== PGS;
         if (!isRendering) {
           return needsBinding ? value.bind(receiver) : value;
@@ -231,7 +234,7 @@ export function usePassedState<T extends object>(
 }
 
 export function $<T extends object>(state: T): T {
-  return (state as any)[PGS](false);
+  return getPGS(state)(false);
 }
 
 export function targetOf<T extends object>(state: T): T {

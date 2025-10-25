@@ -2,24 +2,29 @@ import { expect, test, mock } from "bun:test";
 import {
   defineState,
   globalStore,
+  targetOf,
   useLocalState,
+  usePassedState,
   useProvidedState,
+  type Infer,
 } from "../core.js";
 import { createContext, useContext, useLayoutEffect } from "react";
 import { act, render } from "@testing-library/react";
+import { deepClone } from "../index.js";
 
-test("PGS property is not enumerable", () => {
-  const State = defineState({} as Record<string, number>);
-
-  const state = State((state) => {
-    state.a = 1;
-    state.b = 2;
-    state.c = 3;
-  });
-
-  const sum = Object.entries(state).reduce((acc, [_, value]) => acc + value, 0);
-  expect(sum).toBe(6);
-  expect(Object.keys(state)).toEqual(["a", "b", "c"]);
+test("state should equal target", () => {
+  const target = [{ user: { name: "John" } }, { user: { name: "Jane" } }];
+  const State = defineState(target);
+  const state = State();
+  expect(state).not.toBe(target);
+  expect(targetOf(state)).not.toBe(state);
+  expect(targetOf(state)).not.toBe(target);
+  expect(state).toEqual(target);
+  expect(targetOf(state)).toEqual(target);
+  expect(deepClone(state)).toEqual(target);
+  expect(deepClone(state[0])).toEqual(state[0]);
+  expect(targetOf(state[0])).not.toBe(state[0]);
+  expect(structuredClone(targetOf(state[0].user))).toEqual(state[0].user);
 });
 
 test("constructor makes deep copies of state objects", () => {
@@ -45,6 +50,40 @@ test("constructor makes deep copies of state objects", () => {
   expect(state2.outer.inner.value).toBe(0);
   expect(state2.value).toBe(0);
   expect(state2.sortedArray).toEqual([]);
+});
+
+test("Provider", () => {
+  const State = defineState({ count: 0 });
+
+  function TestComponent() {
+    const state = useProvidedState(State, { sync: true });
+    return <div data-testid="result">{state.count}</div>;
+  }
+
+  const { getByTestId } = render(
+    <State.Provider>
+      <TestComponent />
+    </State.Provider>
+  );
+
+  expect(getByTestId("result").textContent).toBe("0");
+});
+
+test("passing state from one component to another", () => {
+  const State = defineState({ count: 0 });
+
+  function ParentComponent() {
+    const state = useLocalState(State, { sync: true });
+    return <ChildComponent state={state} />;
+  }
+
+  function ChildComponent({ state: _state }: { state: Infer<typeof State> }) {
+    const state = usePassedState(_state);
+    return <div data-testid="result">{state.count}</div>;
+  }
+
+  const { getByTestId } = render(<ParentComponent />);
+  expect(getByTestId("result").textContent).toBe("0");
 });
 
 test("hooks have access to `this`", () => {
