@@ -9,7 +9,7 @@ import {
   type Infer,
 } from "../core.js";
 import { createContext, useContext, useLayoutEffect } from "react";
-import { act, render } from "@testing-library/react";
+import { act, render, renderHook } from "@testing-library/react";
 import { deepClone } from "../index.js";
 
 test("state should equal target", () => {
@@ -230,4 +230,28 @@ test("arrays mutations are reactive", () => {
     globalStore.getState(State).array.sort((a, b) => a - b);
   });
   expect(getByTestId("result").textContent).toBe("1, 2, 3");
+});
+
+test("mutating during render should throw error", () => {
+  const State = defineState({ values: [0, 1, 2] });
+
+  function TestComponent1() {
+    const state = useLocalState(State);
+    state.values.splice(0, 1);
+    return <div data-testid="result">{state.values.length}</div>;
+  }
+
+  expect(() => render(<TestComponent1 />)).toThrowError(
+    "Can't mutate state during render"
+  );
+
+  function TestComponent2() {
+    const state = useLocalState(State);
+    state.values[0]++;
+    return <div data-testid="result">{state.values.length}</div>;
+  }
+
+  expect(() => render(<TestComponent2 />)).toThrowError(
+    "Can't mutate state during render"
+  );
 });

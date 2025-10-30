@@ -227,6 +227,12 @@ export function usePassedState<T extends object>(
         }
         return needsBinding ? snapshotValue.bind(receiver) : snapshotValue;
       },
+      set(target, prop, newValue, receiver) {
+        if (isRendering) {
+          throw new Error("Can't mutate state during render");
+        }
+        return Reflect.set(target, prop, newValue, receiver);
+      },
     });
   }
 
