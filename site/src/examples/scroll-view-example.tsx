@@ -1,4 +1,4 @@
-import { defineState, ref, useLocalState } from "pretty-good-state";
+import { $, defineState, ref, useLocalState } from "pretty-good-state";
 
 const ScrollState = defineState({
   top: 0,
@@ -12,7 +12,7 @@ export function ScrollView() {
       <div>Top: {scroll.top}</div>
       <div
         ref={(el) => {
-          scroll.el = ref(el);
+          $(scroll).el = ref(el);
         }}
         onScroll={(e) => {
           scroll.top = e.currentTarget.scrollTop;
@@ -20,6 +20,14 @@ export function ScrollView() {
         className="h-[100px] overflow-y-auto outline"
       >
         <div className="h-[200px] p-3">Scroll Me! ⬇</div>
+        <button
+          className="m-3"
+          onClick={() => {
+            scroll.el?.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        >
+          Back to top
+        </button>
       </div>
     </>
   );

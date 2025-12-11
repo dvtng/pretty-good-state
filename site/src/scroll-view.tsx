@@ -3,6 +3,7 @@ import {
   defineState,
   useLocalState,
   useProvidedState,
+  $,
 } from "pretty-good-state";
 import { ReactNode, useEffect } from "react";
 import { twMerge } from "tailwind-merge";
@@ -12,7 +13,7 @@ export const ScrollState = defineState(() => ({
   left: 0,
   width: 0,
   height: 0,
-  el: ref<HTMLDivElement>(document.createElement("div")),
+  el: ref<HTMLDivElement | null>(null),
   scrollTo(scrollTopOptions: ScrollToOptions) {
     this.el?.scrollTo(scrollTopOptions);
   },
@@ -53,9 +54,7 @@ export function ScrollView({
   return (
     <div
       ref={(el) => {
-        if (el) {
-          state.el = ref(el);
-        }
+        $(state).el = ref(el);
       }}
       className={twMerge("relative overflow-y-auto", className)}
       onScroll={(e) => {
