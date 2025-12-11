@@ -2,4 +2,4 @@
 
 A just-enough state management library for React.
 
-See the [documentation](./pretty-good-state/README.md).
+See the [documentation](https://dvtng.github.io/pretty-good-state/).
